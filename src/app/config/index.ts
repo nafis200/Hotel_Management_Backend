@@ -17,4 +17,5 @@ export default {
 //     refreshToken: process.env.REFRESH_TOKEN,
 //   },
   databaseUrl: process.env.DATABASE_URL,
+  openRouterApiKey: process.env.OPENROUTER_API_KEY
 };

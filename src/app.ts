@@ -5,6 +5,7 @@ import httpStatus from "http-status";
 
 
 import path from "path";
+import router from "./app/routes";
 
 const app: Application = express();
 app.use(cookieParser());
@@ -25,7 +26,7 @@ app.get("/", (req: Request, res: Response) => {
   });
 });
 
-// app.use("/api", router);
+app.use("/api", router);
 
 // app.use(globalErrorHandler);
 
