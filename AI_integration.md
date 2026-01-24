@@ -6,7 +6,7 @@
 
 <!-- api keys -->
 
-<!-- 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 -->
+<!-- project secret keys -->
 
 <!-- go to docs -->
 

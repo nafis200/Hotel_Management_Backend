@@ -6,13 +6,22 @@ import httpStatus from "http-status";
 
 import path from "path";
 import router from "./app/routes";
+import { PaymentController } from "./app/modules/payment/payment.controller";
 
 const app: Application = express();
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "../public")));
 
+app.post(
+    "/webhook",
+    express.raw({ type: "application/json" }),
+    PaymentController.handleStripeWebhookEvent
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+
+
 app.use(
   cors({
     origin: ["http://localhost:3000"],

@@ -17,5 +17,7 @@ export default {
 //     refreshToken: process.env.REFRESH_TOKEN,
 //   },
   databaseUrl: process.env.DATABASE_URL,
-  openRouterApiKey: process.env.OPENROUTER_API_KEY
+  openRouterApiKey: process.env.OPENROUTER_API_KEY,
+  stripeSecretKey:process.env.STRIPE_SECRET_KEY,
+  webhooksecret:process.env.WEBHOOK_SECRET
 };
