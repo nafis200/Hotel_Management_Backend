@@ -23,6 +23,8 @@
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "@types/express": "^5.0.6",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
@@ -30,6 +32,7 @@
     "http-status": "^2.1.0",
     "jsonwebtoken": "^9.0.3",
     "openai": "^6.16.0",
+    "passport": "^0.7.0",
     "pg": "^8.17.2",
     "stripe": "^20.2.0",
     "typescript": "^5.9.3",
@@ -38,7 +41,9 @@
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.0.10",
+    "@types/passport": "^1.0.17",
     "@types/pg": "^8.16.0",
     "prisma": "^7.3.0",
     "ts-node-dev": "^2.0.0"
