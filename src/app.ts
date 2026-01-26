@@ -2,13 +2,26 @@ import express, { Application, NextFunction, Request, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import httpStatus from "http-status";
-
+import passport from "passport";
 
 import path from "path";
 import router from "./app/routes";
 import { PaymentController } from "./app/modules/payment/payment.controller";
 
+import expressSession from "express-session";
+import "./app/config/passport"
+
+
 const app: Application = express();
+
+app.use(expressSession({
+    secret: "abcde",
+    resave: false,
+    saveUninitialized: false
+}))
+app.use(passport.initialize())
+app.use(passport.session())
+
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "../public")));
 

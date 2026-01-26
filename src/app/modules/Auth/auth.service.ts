@@ -22,14 +22,14 @@ interface IUser {
 const users: IUser[] = [
   {
     id: "1",
-    email: "test@example.com",
+    email: "test@gmail.com",
     password: bcryptjs.hashSync("123456", 10),
     role: "user",
   },
   {
     id: "2",
-    email: "admin@example.com",
-    password: bcryptjs.hashSync("admin123", 10),
+    email: "admin@gmail.com",
+    password: bcryptjs.hashSync("123456", 10),
     role: "admin",
   },
 ];

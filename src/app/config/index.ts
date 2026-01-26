@@ -19,5 +19,8 @@ export default {
   databaseUrl: process.env.DATABASE_URL,
   openRouterApiKey: process.env.OPENROUTER_API_KEY,
   stripeSecretKey:process.env.STRIPE_SECRET_KEY,
-  webhooksecret:process.env.WEBHOOK_SECRET
+  webhooksecret:process.env.WEBHOOK_SECRET,
+  googleclientid:process.env.GOOGLE_CLIENT_ID,
+  googlesecret:process.env.GOOGLE_CLIENT_SECRET,
+  googlecallbackurl:process.env.GOOGLE_CALLBACK_URL
 };

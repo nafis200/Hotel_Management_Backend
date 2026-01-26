@@ -116,11 +116,8 @@ const googleCallbackController = catchAsync(
     }
 
     // /booking => booking , => "/" => ""
-    const user = {
-      id: "google_123456",
-      email: "test@gmail.com",
-      role: "user",
-    };
+    const user = req.user;
+
 
     if (!user) {
       throw new ApiError(httpStatus.NOT_FOUND, "User Not Found");
@@ -137,7 +134,11 @@ const googleCallbackController = catchAsync(
     //     data: null,
     // })
 
-    res.redirect(`${"http://localhost:3000/dashboard"}`);
+    
+
+    res.redirect(
+      "https://www.google.com/search?q=programming+hero+level+2&rlz=1C1BNSD_enBD1125BD1126&sourceid=chrome&ie=UTF-8",
+    );
   },
 );
 
