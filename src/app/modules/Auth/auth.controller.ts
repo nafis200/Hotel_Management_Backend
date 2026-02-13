@@ -10,6 +10,20 @@ import sendResponse from "../../../shared/sendResponse";
 import catchAsync from "../../../shared/catchAsync";
 import ApiError from "../../errors/ApiError";
 
+
+const registerUser = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userInfo = await AuthServices.registerUser(req.body);
+
+    sendResponse(res, {
+      success: true,
+      status: httpStatus.CREATED,
+      message: "User registered successfully",
+      data: userInfo,
+    });
+  }
+);
+
 const credentialsLogin = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const loginInfo = await AuthServices.credentialsLogin(req.body);
@@ -68,7 +82,7 @@ const logout = catchAsync(
     });
   },
 );
-const resetPassword = catchAsync(
+const ChangePassword = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const newPassword = req.body.newPassword;
     const oldPassword = req.body.oldPassword;
@@ -78,7 +92,7 @@ const resetPassword = catchAsync(
       role: "user",
     };
 
-    await AuthServices.resetPassword(
+    await AuthServices.ChangePassword(
       oldPassword,
       newPassword,
       decodedToken as JwtPayload,
@@ -114,10 +128,40 @@ const googleCallbackController = catchAsync(
   },
 );
 
+
+const forgotPassword = catchAsync(async (req: Request, res: Response) => {
+
+    await AuthServices.forgotPassword(req.body);
+
+    sendResponse(res, {
+        status: httpStatus.OK,
+        success: true,
+        message: "Check your email!",
+        data: null
+    })
+});
+
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
+
+    const token = req.headers.authorization || "";
+
+    await AuthServices.resetPassword(token, req.body);
+
+    sendResponse(res, {
+        status: httpStatus.OK,
+        success: true,
+        message: "Password Reset!",
+        data: null
+    })
+});
+
 export const AuthControllers = {
+  registerUser,
   credentialsLogin,
   getNewAccessToken,
   logout,
-  resetPassword,
+  ChangePassword,
   googleCallbackController,
+  forgotPassword,
+  resetPassword
 };
