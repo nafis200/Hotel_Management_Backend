@@ -24,6 +24,29 @@ const registerUser = catchAsync(
   }
 );
 
+
+
+export const verifyEmail = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { email, token } = req.query;
+
+
+    if (!email || !token) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Email and token are required");
+    }
+
+
+    const result = await AuthServices.verifyEmailService(token as string);
+
+    setAuthCookie(res, {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+    });
+
+    res.redirect("https://www.google.com/search?q=vjudge&oq=&gs_lcrp=EgZjaHJvbWUqCQgEECMYJxjqAjIJCAAQIxgnGOoCMgkIARAjGCcY6gIyCQgCECMYJxjqAjIJCAMQIxgnGOoCMgkIBBAjGCcY6gIyCQgFECMYJxjqAjIJCAYQIxgnGOoCMgkIBxAuGCcY6gLSAQkzNDIyajBqMTWoAgiwAgHxBRYBsPTx72yT8QUWAbD08e9skw&sourceid=chrome&ie=UTF-8");
+  }
+);
+
 const credentialsLogin = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const loginInfo = await AuthServices.credentialsLogin(req.body);
@@ -163,5 +186,6 @@ export const AuthControllers = {
   ChangePassword,
   googleCallbackController,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  verifyEmail 
 };

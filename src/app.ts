@@ -9,6 +9,7 @@ import router from "./app/routes";
 
 import expressSession from "express-session";
 import "./app/config/passport";
+import globalErrorHandler from "./app/middlewares/globalErrorHandler";
 
 const app: Application = express();
 
@@ -43,7 +44,7 @@ app.get("/", (req: Request, res: Response) => {
 
 app.use("/api", router);
 
-// app.use(globalErrorHandler);
+app.use(globalErrorHandler);
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.status(httpStatus.NOT_FOUND).json({
@@ -57,3 +58,4 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 export default app;
+
