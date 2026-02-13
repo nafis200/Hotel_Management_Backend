@@ -6,40 +6,33 @@ import passport from "passport";
 
 import path from "path";
 import router from "./app/routes";
-import { PaymentController } from "./app/modules/payment/payment.controller";
 
 import expressSession from "express-session";
-import "./app/config/passport"
-
+import "./app/config/passport";
 
 const app: Application = express();
 
-app.use(expressSession({
+app.use(
+  expressSession({
     secret: "abcde",
     resave: false,
-    saveUninitialized: false
-}))
-app.use(passport.initialize())
-app.use(passport.session())
+    saveUninitialized: false,
+  }),
+);
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "../public")));
 
-app.post(
-    "/webhook",
-    express.raw({ type: "application/json" }),
-    PaymentController.handleStripeWebhookEvent
-);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-
 
 app.use(
   cors({
     origin: ["http://localhost:3000"],
     credentials: true,
-  })
+  }),
 );
 
 app.get("/", (req: Request, res: Response) => {

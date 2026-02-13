@@ -14,16 +14,6 @@ const credentialsLogin = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const loginInfo = await AuthServices.credentialsLogin(req.body);
 
-    // res.cookie("accessToken", loginInfo.accessToken, {
-    //     httpOnly: true,
-    //     secure: false
-    // })
-
-    // res.cookie("refreshToken", loginInfo.refreshToken, {
-    //     httpOnly: true,
-    //     secure: false,
-    // })
-
     setAuthCookie(res, loginInfo);
 
     sendResponse(res, {
@@ -46,11 +36,6 @@ const getNewAccessToken = catchAsync(
     const tokenInfo = await AuthServices.getNewAccessToken(
       refreshToken as string,
     );
-
-    // res.cookie("accessToken", tokenInfo.accessToken, {
-    //     httpOnly: true,
-    //     secure: false
-    // })
 
     setAuthCookie(res, tokenInfo);
 
@@ -114,10 +99,7 @@ const googleCallbackController = catchAsync(
     if (redirectTo.startsWith("/")) {
       redirectTo = redirectTo.slice(1);
     }
-
-    // /booking => booking , => "/" => ""
     const user = req.user;
-
 
     if (!user) {
       throw new ApiError(httpStatus.NOT_FOUND, "User Not Found");
@@ -126,16 +108,6 @@ const googleCallbackController = catchAsync(
     const tokenInfo = createUserTokens(user);
 
     setAuthCookie(res, tokenInfo);
-
-    // sendResponse(res, {
-    //     success: true,
-    //     status: httpStatus.OK,
-    //     message: "Password Changed Successfully",
-    //     data: null,
-    // })
-
-    
-
     res.redirect(
       "https://www.google.com/search?q=programming+hero+level+2&rlz=1C1BNSD_enBD1125BD1126&sourceid=chrome&ie=UTF-8",
     );

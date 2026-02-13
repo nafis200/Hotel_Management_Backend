@@ -70,11 +70,7 @@ const credentialsLogin = async (payload: Partial<IUser>) => {
   };
 };
 
-/**
- * =====================
- * REFRESH TOKEN
- * =====================
- */
+
 const getNewAccessToken = async (refreshToken: string) => {
   const newAccessToken =
     await createNewAccessTokenWithRefreshToken(refreshToken);
@@ -84,11 +80,7 @@ const getNewAccessToken = async (refreshToken: string) => {
   };
 };
 
-/**
- * =====================
- * RESET PASSWORD
- * =====================
- */
+
 const resetPassword = async (
   oldPassword: string,
   newPassword: string,
@@ -122,11 +114,7 @@ const resetPassword = async (
   };
 };
 
-/**
- * =====================
- * EXPORT
- * =====================
- */
+
 export const AuthServices = {
   credentialsLogin,
   getNewAccessToken,

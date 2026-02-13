@@ -53,7 +53,7 @@ passport.use(
           name: profile.displayName,
         };
 
-        
+        console.log("passport",user)
 
         return done(null, user);
       } catch (error) {
