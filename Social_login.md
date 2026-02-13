@@ -101,3 +101,15 @@ Now passport.ts serialize korbo
 passport file ta app.ts e run korte hobe
 
 app.ts e import "./app/config/passport" import this
+
+
+
+<!-- nodemailer email and app name-->
+
+go to google
+
+manage your account
+
+<!-- go security -->
+
+<!-- 2 step verification on -->

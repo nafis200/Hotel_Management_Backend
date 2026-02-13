@@ -180,10 +180,12 @@ const forgotPassword = async (payload: { email: string }) => {
     config.jwt.reset_pass_secret as Secret,
     config.jwt.reset_pass_token_expires_in as string,
   );
-  //console.log(resetPassToken)
+ 
 
   const resetPassLink =
-    config.reset_pass_link + `?userId=${userData.id}&token=${resetPassToken}`;
+    config.reset_pass_link + `?email=${userData.email}&token=${resetPassToken}`;
+
+     //console.log(resetPassToken)
 
   await emailSender(
     userData.email,
@@ -200,6 +202,7 @@ const forgotPassword = async (payload: { email: string }) => {
 
         </div>
         `,
+      "reset password link"
   );
   //console.log(resetPassLink)
 };
