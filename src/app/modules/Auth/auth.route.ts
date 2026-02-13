@@ -36,4 +36,10 @@ router.get(
   AuthControllers.googleCallbackController,
 );
 
+router.get("/", AuthControllers.getAllUsers);
+
+router.get("/:id", AuthControllers.getSingleUser);
+
+router.delete("/:id", AuthControllers.deleteUser);
+
 export const AuthRoutes = router;

@@ -38,6 +38,8 @@ export const verifyEmail = catchAsync(
 
     const result = await AuthServices.verifyEmailService(token as string);
 
+
+
     setAuthCookie(res, {
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
@@ -178,6 +180,51 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
     })
 });
 
+const getAllUsers = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await AuthServices.getAllUsers();
+
+    sendResponse(res, {
+        status: httpStatus.OK,
+        success: true,
+        message: "All users fetched successfully",
+        data: result
+    });
+
+});
+
+const getSingleUser = catchAsync(async (req: Request, res: Response) => {
+
+    const { id } = req.params;
+
+    const result = await AuthServices.getSingleUser(Number(id));
+
+    sendResponse(res, {
+        status: httpStatus.OK,
+        success: true,
+        message: "User fetched successfully",
+        data: result
+    });
+
+});
+
+
+const deleteUser = catchAsync(async (req: Request, res: Response) => {
+
+    const { id } = req.params;
+
+    const result = await AuthServices.deleteUser(Number(id));
+
+    sendResponse(res, {
+        status: httpStatus.OK,
+        success: true,
+        message: "User deleted successfully",
+        data: result
+    });
+
+});
+
+
 export const AuthControllers = {
   registerUser,
   credentialsLogin,
@@ -187,5 +234,8 @@ export const AuthControllers = {
   googleCallbackController,
   forgotPassword,
   resetPassword,
-  verifyEmail 
+  verifyEmail,
+  deleteUser,
+  getSingleUser,
+  getAllUsers 
 };

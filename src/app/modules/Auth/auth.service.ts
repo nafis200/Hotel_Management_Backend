@@ -66,11 +66,9 @@ const registerUser = async (payload: RegisterUserInput) => {
     config.jwt.refresh_token_expires_in as string,
   );
 
-
   const resetPassLink =
     config.registration_link + `?email=${result.email}&token=${resetPassToken}`;
 
-    console.log(resetPassLink)
 
   await emailSender(
     result.email,
@@ -172,7 +170,7 @@ const credentialsLogin = async (payload: Partial<IUser>) => {
     throw new ApiError(httpStatus.FORBIDDEN, "User is deleted");
   }
 
-  if(isUserExist.verified === false){
+  if (isUserExist.verified === false) {
     throw new ApiError(httpStatus.FORBIDDEN, "Verify your email");
   }
 
@@ -320,6 +318,34 @@ const resetPassword = async (
   });
 };
 
+const getAllUsers = async () => {
+  return await prisma.user.findMany();
+};
+
+const getSingleUser = async (id: number) => {
+  const user = await prisma.user.findUnique({
+    where: { id },
+  });
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+  return user;
+};
+
+const deleteUser = async (id: number) => {
+  const user = await prisma.user.findUnique({
+    where: { id },
+  });
+  if (!user) {
+    throw new Error("User not found");
+  }
+  const deletedUser = await prisma.user.delete({
+    where: { id },
+  });
+
+  return deletedUser;
+};
+
 export const AuthServices = {
   credentialsLogin,
   getNewAccessToken,
@@ -328,4 +354,7 @@ export const AuthServices = {
   forgotPassword,
   registerUser,
   verifyEmailService,
+  getAllUsers,
+  getSingleUser,
+  deleteUser,
 };
