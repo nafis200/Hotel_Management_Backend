@@ -149,6 +149,7 @@ const googleCallbackController = catchAsync(
 
     const tokenInfo = createUserTokens(user);
 
+
     setAuthCookie(res, tokenInfo);
     res.redirect(
       "https://www.google.com/search?q=programming+hero+level+2&rlz=1C1BNSD_enBD1125BD1126&sourceid=chrome&ie=UTF-8",

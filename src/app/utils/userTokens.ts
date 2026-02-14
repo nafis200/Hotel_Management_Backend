@@ -3,6 +3,7 @@ import { JwtPayload } from "jsonwebtoken";
 
 import { generateToken, verifyToken } from "./jwt";
 import ApiError from "../errors/ApiError";
+import config from "../config";
 
 /**
  * 🔥 Fake in-memory users (NO DB)
@@ -40,14 +41,14 @@ export const createUserTokens = (user: any) => {
 
   const accessToken = generateToken(
     jwtPayload,
-    "abc",
-    "5"
+    config.jwt.jwt_secret as string,
+    config.jwt.expires_in as string,
   );
 
   const refreshToken = generateToken(
     jwtPayload,
-    "abc",
-    "5"
+    config.jwt.refresh_token_secret as string,
+    config.jwt.reset_pass_token_expires_in as string
   );
 
   return {

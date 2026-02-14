@@ -6,6 +6,9 @@ import {
   VerifyCallback,
 } from "passport-google-oauth20";
 import config from ".";
+import prisma from "../../shared/prisma";
+import * as bcrypt from "bcrypt";
+import { UserRole, UserStatus } from "@prisma/client";
 
 passport.use(
   new GoogleStrategy(
@@ -21,39 +24,45 @@ passport.use(
       done: VerifyCallback,
     ) => {
       try {
-        // const email = profile.emails?.[0].value;
 
-        const email = "nafisahamed200429@gmail.com";
+        console.log(profile,"profile")
+
+        const email = profile.emails?.[0].value;
 
         if (!email) {
           return done(null, false, { mesaage: "No email found" });
         }
 
-        // let user = await User.findOne({ email })
+        let user: any = await prisma.user.findUnique({
+          where: {
+            email,
+          },
+        });
 
-        // if (!user) {
-        //     user = await User.create({
-        //         email,
-        //         name: profile.displayName,
-        //         picture: profile.photos?.[0].value,
-        //         role: Role.USER,
-        //         isVerified: true,
-        //         auths: [
-        //             {
-        //                 provider: "google",
-        //                 providerId: profile.id
-        //             }
-        //         ]
-        //     })
-        // }
+        const hashedPassword = await bcrypt.hash("123456", 12);
 
-        const user = {
-          _id: profile.id,
-          email,
-          name: profile.displayName,
-        };
-
-        console.log("passport",user)
+        if (!user) {
+          user = await prisma.user.create({
+            data: {
+              name: profile.displayName,
+              email,
+              profilePhoto: profile.photos?.[0]?.value || null,
+              password: hashedPassword,
+              verified: true,
+              role: UserRole.USER,
+              status: UserStatus.ACTIVE,
+            },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              verified: true,
+              role: true,
+              status: true,
+              createdAt: true,
+            },
+          });
+        }
 
         return done(null, user);
       } catch (error) {
@@ -64,20 +73,18 @@ passport.use(
   ),
 );
 
-// frontend localhost:5173/login?redirect=/booking -> localhost:5000/api/v1/auth/google?redirect=/booking -> passport -> Google OAuth Consent -> gmail login -> successful -> callback url localhost:5000/api/v1/auth/google/callback -> db store -> token
-
-// Bridge == Google -> user db store -> token
-//Custom -> email , password, role : USER, name... -> registration -> DB -> 1 User create
-//Google -> req -> google -> successful : Jwt Token : Role , email -> DB - Store -> token - api access
-
 passport.serializeUser((user: any, done: (err: any, id?: unknown) => void) => {
-  done(null, user._id);
+  done(null, user.id);
 });
 
 passport.deserializeUser(async (id: string, done: any) => {
   try {
-    // const user = await User.findById(id);
-    const user = "nafisahamed200429@gmail.com";
+    const idNumber = Number(id);
+    const user = await prisma.user.findUnique({
+      where: {
+        id: idNumber,
+      },
+    });
     done(null, user);
   } catch (error) {
     console.log(error);
