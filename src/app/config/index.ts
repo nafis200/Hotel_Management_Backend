@@ -43,5 +43,8 @@ export default {
   databaseUrl: process.env.DATABASE_URL,
   googleclientid:process.env.GOOGLE_CLIENT_ID,
   googlesecret:process.env.GOOGLE_CLIENT_SECRET,
-  googlecallbackurl:process.env.GOOGLE_CALLBACK_URL
+  googlecallbackurl:process.env.GOOGLE_CALLBACK_URL,
+  facebookcallbackurl:process.env.FACEBOOK_CALLBACK_URL,
+  facebookId:process.env.FACEBOOK_APP_ID,
+  facebookSecret:process.env.FACEBOOK_SECRET
 };

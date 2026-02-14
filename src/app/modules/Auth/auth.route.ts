@@ -46,7 +46,7 @@ router.delete("/:id", AuthControllers.deleteUser);
 router.post(
   "/image",
   fileUploader.upload.array("files"),
-  AuthControllers.uploadImages
+  AuthControllers.uploadImages,
 );
 
 export const AuthRoutes = router;
