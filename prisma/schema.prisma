@@ -23,6 +23,12 @@ model User {
 }
 
 
+model ImageGallery {
+  id      Int      @id @default(autoincrement())
+  images  String[] @db.Text
+}
+
+
 
 
 enum UserRole {

@@ -9,6 +9,7 @@ import { AuthServices } from "./auth.service";
 import sendResponse from "../../../shared/sendResponse";
 import catchAsync from "../../../shared/catchAsync";
 import ApiError from "../../errors/ApiError";
+import { fileUploader } from "../../helper/fileUploader";
 
 
 const registerUser = catchAsync(
@@ -46,6 +47,8 @@ export const verifyEmail = catchAsync(
     });
 
     res.redirect("https://www.google.com/search?q=vjudge&oq=&gs_lcrp=EgZjaHJvbWUqCQgEECMYJxjqAjIJCAAQIxgnGOoCMgkIARAjGCcY6gIyCQgCECMYJxjqAjIJCAMQIxgnGOoCMgkIBBAjGCcY6gIyCQgFECMYJxjqAjIJCAYQIxgnGOoCMgkIBxAuGCcY6gLSAQkzNDIyajBqMTWoAgiwAgHxBRYBsPTx72yT8QUWAbD08e9skw&sourceid=chrome&ie=UTF-8");
+
+    // it must be reddireect login
   }
 );
 
@@ -225,6 +228,36 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 
+const uploadImages = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+
+    const files = req.files as Express.Multer.File[];
+
+    console.log("Body Data:", req.body);
+    console.log("Uploaded Files:", files);
+
+    const uploadedFiles = await Promise.all(
+      files.map(async (file) => {
+        const result = await fileUploader.uploadToCloudinary(file);
+        return {
+          name: file.originalname,
+          size: file.size,
+          mimetype: file.mimetype,
+          url: result?.secure_url
+        };
+      })
+    );
+
+    sendResponse(res, {
+      success: true,
+      status: httpStatus.OK,
+      message: "Images Uploaded Successfully",
+      data: uploadedFiles
+    });
+  }
+);
+
+
 export const AuthControllers = {
   registerUser,
   credentialsLogin,
@@ -237,5 +270,6 @@ export const AuthControllers = {
   verifyEmail,
   deleteUser,
   getSingleUser,
-  getAllUsers 
+  getAllUsers,
+  uploadImages 
 };

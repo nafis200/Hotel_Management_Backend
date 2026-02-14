@@ -33,6 +33,13 @@ export default {
         email: process.env.EMAIL,
         app_pass: process.env.APP_PASS
     },
+
+    cloudinary:{
+       cloud_name:process.env.CLOUDINARY_CLOUD_NAME,
+       cloud_api_key:process.env.CLOUDINARY_API_KEY,
+       cloud_secret_key:process.env.CLOUDINARY_SECRET_KEY
+    },
+
   databaseUrl: process.env.DATABASE_URL,
   googleclientid:process.env.GOOGLE_CLIENT_ID,
   googlesecret:process.env.GOOGLE_CLIENT_SECRET,

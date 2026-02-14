@@ -2,6 +2,7 @@ import { NextFunction, Request, Response, Router } from "express";
 import passport from "passport";
 
 import { AuthControllers } from "./auth.controller";
+import { fileUploader } from "../../helper/fileUploader";
 
 const router = Router();
 
@@ -41,5 +42,11 @@ router.get("/", AuthControllers.getAllUsers);
 router.get("/:id", AuthControllers.getSingleUser);
 
 router.delete("/:id", AuthControllers.deleteUser);
+
+router.post(
+  "/image",
+  fileUploader.upload.array("files"),
+  AuthControllers.uploadImages
+);
 
 export const AuthRoutes = router;
