@@ -3,6 +3,7 @@ import express from "express";
 import { AuthRoutes } from "../modules/Auth/auth.route";
 import { RoomCategoryRoutes } from "../modules/roomCategory/roomcategory.route";
 import { RoomRoutes } from "../modules/room/RoomControllers.route";
+import { BookingRoutes } from "../modules/booking/booking_route";
 
 const router = express.Router();
 
@@ -19,6 +20,10 @@ const moduleRoutes = [
   {
     path:"/room",
     route:RoomRoutes 
+  },
+  {
+    path:"/book",
+    route:BookingRoutes,
   }
 ];
 

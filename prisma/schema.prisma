@@ -57,7 +57,7 @@ model Booking {
   checkIn     DateTime
   checkOut    DateTime
   adults      Int
-  children    Int
+  children    Int @default(0)
   totalAmount Int
   status      BookingStatus @default(PENDING_PAYMENT)
   createdAt   DateTime @default(now())
