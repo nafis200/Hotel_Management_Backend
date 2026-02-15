@@ -31,7 +31,6 @@ model ImageGallery {
   images  String[] @db.Text
 }
 
-
 model RoomType {
   id          Int      @id @default(autoincrement())
   name        String   
@@ -48,15 +47,13 @@ model Room {
   roomNumber  Int      @unique
   roomTypeId  Int
   roomType    RoomType @relation(fields: [roomTypeId], references: [id])
-  bookings    Booking[]  
+  bookings    BookingRoom[]  
 }
 
 model Booking {
   id          Int      @id @default(autoincrement())
   userId      Int
   user        User     @relation(fields: [userId], references: [id])
-  roomId      Int
-  room        Room     @relation(fields: [roomId], references: [id])
   checkIn     DateTime
   checkOut    DateTime
   adults      Int
@@ -64,7 +61,19 @@ model Booking {
   totalAmount Int
   status      BookingStatus @default(PENDING_PAYMENT)
   createdAt   DateTime @default(now())
+
+  rooms       BookingRoom[]  
 }
+
+model BookingRoom {
+  id        Int     @id @default(autoincrement())
+  bookingId Int
+  booking   Booking @relation(fields: [bookingId], references: [id])
+  roomId    Int
+  room      Room    @relation(fields: [roomId], references: [id])
+}
+
+
 
 
 
