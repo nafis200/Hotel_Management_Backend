@@ -12,7 +12,7 @@ import config from "../../config";
 import prisma from "../../../shared/prisma";
 import { UserStatus } from "@prisma/client";
 import { jwtHelpers } from "../../helper/jwtHelper";
-import emailSender from "./emailSender";
+import emailSender from "../../utils/emailSender";
 import * as bcrypt from "bcrypt";
 
 interface IUser {
@@ -68,7 +68,6 @@ const registerUser = async (payload: RegisterUserInput) => {
 
   const resetPassLink =
     config.registration_link + `?email=${result.email}&token=${resetPassToken}`;
-
 
   await emailSender(
     result.email,
