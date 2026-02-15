@@ -10,11 +10,6 @@ router.get(
 );
 
 
-router.get(
-  "/:id",
-  BookingController.getSingleBookingController
-);
-
 router.post(
   "/book",
   BookingController.bookMultipleRoomsController
@@ -31,7 +26,7 @@ router.get(
 );
 
 router.get(
-  "/rooms-by-date",
+  "/roomsDate",
   BookingController.getRoomsByDateController
 );
 
@@ -39,6 +34,12 @@ router.get(
 router.get(
   "/room-type/:id",
   BookingController.getSingleRoomTypeController
+);
+
+
+router.get(
+  "/:id",
+  BookingController.getSingleBookingController
 );
 
 

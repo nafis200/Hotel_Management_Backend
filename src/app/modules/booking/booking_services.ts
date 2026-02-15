@@ -195,27 +195,34 @@ const getSingleRoomTypeService = async (
   };
 };
 
- const getRoomsByDateService = async (
+const getRoomsByDateService = async (
   checkIn: Date,
   checkOut: Date
 ): Promise<any> => {
-  if (!checkIn || !checkOut) throw new Error("checkIn and checkOut are required");
+
+  if (!checkIn || !checkOut)
+    throw new Error("checkIn and checkOut are required");
+  checkIn.setHours(0, 0, 0, 0);
+  checkOut.setHours(0, 0, 0, 0);
 
   const rooms = await prisma.room.findMany({
     include: {
       bookings: {
-        include: { booking: true } 
+        include: { booking: true }
       }
     }
   });
 
-  const availableRooms:any[] = [];
+  const availableRooms: any[] = [];
   const bookedRooms: any[] = [];
 
   rooms.forEach(room => {
-    const isBooked = room.bookings.some(
-      br => checkIn < br.booking.checkOut && checkOut > br.booking.checkIn
-    );
+    const isBooked = room.bookings.some(br => {
+      const bookingCheckIn = new Date(br.booking.checkIn);
+      const bookingCheckOut = new Date(br.booking.checkOut);
+
+      return checkIn < bookingCheckOut && checkOut > bookingCheckIn;
+    });
 
     if (isBooked) {
       bookedRooms.push({ roomId: room.id, roomNumber: room.roomNumber });
@@ -224,8 +231,9 @@ const getSingleRoomTypeService = async (
     }
   });
 
-  return { "available" : availableRooms, "booked" : bookedRooms };
+  return { available: availableRooms, booked: bookedRooms };
 };
+
 
 
 const deleteRoomTypeService = async (roomTypeId: number) => {

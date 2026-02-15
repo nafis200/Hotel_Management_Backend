@@ -40,6 +40,9 @@ const bookMultipleRoomsController = catchAsync(async (req: Request, res: Respons
 
 const getAvailableRoomsController = catchAsync(
   async (req: Request, res: Response) => {
+
+ 
+
     const { checkIn, checkOut } = req.query;
 
 
@@ -87,7 +90,11 @@ const getSingleRoomTypeController = catchAsync(async (req: Request, res: Respons
 });
 
 
+
+
 const getRoomsByDateController = catchAsync(async (req: Request, res: Response) => {
+
+
   const { checkIn, checkOut } = req.query;
   if (!checkIn || !checkOut) throw new Error("checkIn and checkOut are required");
 
@@ -137,6 +144,9 @@ const getSingleBookingController = catchAsync(async (req: Request, res: Response
 
 
 
+
+
+
 export const BookingController = {
 
     getSingleBookingController,
@@ -146,5 +156,6 @@ export const BookingController = {
     getSingleRoomTypeController,
     getAvailableRoomsController,
     bookMultipleRoomsController,
-    getAllBookingsController     
+    getAllBookingsController,
+       
 }
