@@ -3,6 +3,7 @@ import httpStatus from "http-status";
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
 import { BookingServices } from "./booking_services";
+import { bookMultipleRoomsWithPayment } from "./book_services";
 
 
 
@@ -37,6 +38,23 @@ const bookMultipleRoomsController = catchAsync(async (req: Request, res: Respons
     data: booking,
   });
 });
+
+
+const OnlinebookMultipleRoomsController = catchAsync(async (req: Request, res: Response) => {
+  const data = req.body;
+
+ 
+
+  const booking = await BookingServices.bookMultipleRoomsWithPayment(data);
+  sendResponse(res, {
+    status: 200,
+    success: true,
+    message: "Rooms booked successfully",
+    data: booking,
+  });
+});
+
+
 
 const getAvailableRoomsController = catchAsync(
   async (req: Request, res: Response) => {
@@ -157,5 +175,6 @@ export const BookingController = {
     getAvailableRoomsController,
     bookMultipleRoomsController,
     getAllBookingsController,
+    OnlinebookMultipleRoomsController 
        
 }

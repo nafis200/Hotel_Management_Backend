@@ -1,5 +1,7 @@
 import prisma from "../../../shared/prisma";
 import ApiError from "../../errors/ApiError";
+import config from "../../config";
+import axios from "axios";
 
 interface RoomRequest {
   roomTypeId: number;
@@ -15,16 +17,140 @@ interface MultiRoomBookingInput {
   children: number;
 }
 
-const bookMultipleRooms = async (input: MultiRoomBookingInput) => {
-  const {
-    userId,
-    roomRequests,
-    checkIn,
-    checkOut,
-    adults,
-    children,
-  } = input;
 
+
+const TAP_SECRET_KEY = config.tap.tap_secret_key as string;
+const BASE_URL = config.tap.tap_services_url as string;
+const headers = {
+  Authorization: `Bearer ${TAP_SECRET_KEY}`,
+  "Content-Type": "application/json",
+};
+
+
+const createCharge = async (payload: {
+  amount: number;
+  currency?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  countryCode?: string;
+  redirectUrl?: string;
+  description?: string;
+  metadata?: Record<string, any>;
+}) => {
+  const body = {
+    amount: payload.amount,
+    currency: payload.currency || "SAR",
+    customer: {
+      name: payload.name || "Test User",
+      email: payload.email || "test@example.com",
+      phone: {
+        country_code: payload.countryCode || "966",
+        number: payload.phone || "500000000",
+      },
+    },
+    source: { id: "src_all" },
+    description: payload.description || "Hotel Booking Payment",
+    redirect: { url: payload.redirectUrl || config.tap.tap_callback_url },
+    metadata: payload.metadata || {},
+  };
+
+  const response = await axios.post(BASE_URL, body, { headers });
+  return response.data;
+};
+
+
+export const bookMultipleRoomsWithPayment = async (input: {
+  userId: number;
+  roomRequests: { roomTypeId: number; quantity: number }[];
+  checkIn: string;
+  checkOut: string;
+  adults: number;
+  children: number;
+}) => {
+  const { userId, roomRequests, checkIn, checkOut, adults, children } = input;
+
+  const checkInDate = new Date(checkIn);
+  const checkOutDate = new Date(checkOut);
+
+  let totalAmount = 0;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { name: true, email: true, contactNumber: true },
+  });
+  if (!user) throw new ApiError(404, "User not found");
+
+  const userName = user.name || "Test User";
+
+  const roomTypeIds = roomRequests.map((r) => r.roomTypeId);
+  const roomTypes = await prisma.roomType.findMany({
+    where: { id: { in: roomTypeIds } },
+  });
+
+  if (roomTypes.length !== roomRequests.length)
+    throw new ApiError(404, "Some room types not found in the database");
+
+
+  for (const request of roomRequests) {
+    const { roomTypeId, quantity } = request;
+    const roomType = roomTypes.find((r) => r.id === roomTypeId)!;
+
+    const availableRooms = await prisma.room.findMany({
+      where: {
+        roomTypeId,
+        bookings: {
+          none: {
+            booking: {
+              checkIn: { lt: checkOutDate },
+              checkOut: { gt: checkInDate },
+            },
+          },
+        },
+      },
+      take: quantity,
+    });
+
+    if (availableRooms.length < quantity) {
+      throw new ApiError(
+        404,
+        `Not enough available rooms for roomTypeId ${roomTypeId}`,
+      );
+    }
+
+    const days = Math.ceil(
+      (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    totalAmount += days * roomType.price * quantity;
+  }
+
+
+  const paymentResponse = await createCharge({
+    amount: totalAmount,
+    currency: "SAR",
+    name: userName,
+    email: user.email || "test@example.com",
+    phone: user.contactNumber || "500000000",
+    countryCode: "966",
+    description: `Booking for user ${userId}`,
+    metadata: {
+      userId: String(userId),
+      checkIn: checkInDate.toISOString(),
+      checkOut: checkOutDate.toISOString(),
+      adults,
+      children,
+      roomRequests: JSON.stringify(roomRequests),
+      date: new Date().toISOString(),
+    },
+  });
+
+  return {url:paymentResponse.transaction.url};
+};
+
+
+
+const bookMultipleRooms = async (input: MultiRoomBookingInput) => {
+  const { userId, roomRequests, checkIn, checkOut, adults, children } = input;
 
   const checkInDate = new Date(checkIn);
   const checkOutDate = new Date(checkOut);
@@ -53,7 +179,7 @@ const bookMultipleRooms = async (input: MultiRoomBookingInput) => {
     if (roomsToAllocate.length < quantity) {
       throw new ApiError(
         404,
-        `Not enough rooms available for roomTypeId ${roomTypeId}`
+        `Not enough rooms available for roomTypeId ${roomTypeId}`,
       );
     }
 
@@ -61,17 +187,15 @@ const bookMultipleRooms = async (input: MultiRoomBookingInput) => {
       where: { id: roomTypeId },
     });
 
-    const days =
-      Math.ceil(
-        (checkOutDate.getTime() - checkInDate.getTime()) /
-          (1000 * 60 * 60 * 24)
-      );
+    const days = Math.ceil(
+      (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
 
     const amountPerRoom = days * (roomType?.price || 0);
     totalAmount += amountPerRoom * roomsToAllocate.length;
 
     roomsToAllocate.forEach((room) =>
-      allocatedRooms.push({ roomId: room.id, roomTypeId })
+      allocatedRooms.push({ roomId: room.id, roomTypeId }),
     );
   }
 
@@ -99,6 +223,7 @@ const bookMultipleRooms = async (input: MultiRoomBookingInput) => {
 };
 
 
+
 interface AvailableRoomType {
   roomTypeId: number;
   name: string;
@@ -114,7 +239,6 @@ const getAvailableRoomsService = async (
   checkIn: Date,
   checkOut: Date,
 ): Promise<AvailableRoomType[]> => {
-
   if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
     throw new Error("Invalid date format");
   }
@@ -143,7 +267,6 @@ const getAvailableRoomsService = async (
     },
   });
 
- 
   return roomTypes.map((rt) => ({
     roomTypeId: rt.id,
     name: rt.name,
@@ -151,11 +274,10 @@ const getAvailableRoomsService = async (
     description: rt.description,
     facilities: rt.facilities,
     images: rt.images,
-    totalRooms: rt.rooms.length,         
+    totalRooms: rt.rooms.length,
     availableRooms: rt.rooms.length,
   }));
 };
-
 
 interface RoomDetails {
   roomTypeId: number;
@@ -197,9 +319,8 @@ const getSingleRoomTypeService = async (
 
 const getRoomsByDateService = async (
   checkIn: Date,
-  checkOut: Date
+  checkOut: Date,
 ): Promise<any> => {
-
   if (!checkIn || !checkOut)
     throw new Error("checkIn and checkOut are required");
   checkIn.setHours(0, 0, 0, 0);
@@ -208,16 +329,16 @@ const getRoomsByDateService = async (
   const rooms = await prisma.room.findMany({
     include: {
       bookings: {
-        include: { booking: true }
-      }
-    }
+        include: { booking: true },
+      },
+    },
   });
 
   const availableRooms: any[] = [];
   const bookedRooms: any[] = [];
 
-  rooms.forEach(room => {
-    const isBooked = room.bookings.some(br => {
+  rooms.forEach((room) => {
+    const isBooked = room.bookings.some((br) => {
       const bookingCheckIn = new Date(br.booking.checkIn);
       const bookingCheckOut = new Date(br.booking.checkOut);
 
@@ -234,57 +355,54 @@ const getRoomsByDateService = async (
   return { available: availableRooms, booked: bookedRooms };
 };
 
-
-
 const deleteRoomTypeService = async (roomTypeId: number) => {
-
   const roomType = await prisma.roomType.findUnique({
     where: { id: roomTypeId },
-    include: { rooms: true }
+    include: { rooms: true },
   });
 
   if (!roomType) {
     throw new ApiError(404, "RoomType not found");
   }
   await prisma.$transaction(async (tx) => {
-    const roomIds = roomType.rooms.map(r => r.id);
+    const roomIds = roomType.rooms.map((r) => r.id);
 
     if (roomIds.length > 0) {
       await tx.bookingRoom.deleteMany({
-        where: { roomId: { in: roomIds } }
+        where: { roomId: { in: roomIds } },
       });
 
       await tx.room.deleteMany({
-        where: { id: { in: roomIds } }
+        where: { id: { in: roomIds } },
       });
     }
 
     await tx.roomType.delete({
-      where: { id: roomTypeId }
+      where: { id: roomTypeId },
     });
   });
 
-  return { message: "RoomType and all related rooms/bookings deleted successfully" };
+  return {
+    message: "RoomType and all related rooms/bookings deleted successfully",
+  };
 };
 
 const cancelBookingByIdService = async (bookingId: number) => {
   const booking = await prisma.booking.findUnique({
-    where: { id: bookingId }
+    where: { id: bookingId },
   });
 
   if (!booking) {
     throw new ApiError(404, "Booking not found");
   }
 
-
   const cancelledBooking = await prisma.booking.update({
     where: { id: bookingId },
-    data: { status: "CANCELLED" }
+    data: { status: "CANCELLED" },
   });
 
   return cancelledBooking;
 };
-
 
 interface BookingWithUser {
   bookingId: number;
@@ -303,12 +421,14 @@ interface BookingWithUser {
   };
 }
 
-const getSingleBookingWithUserService = async (bookingId: number): Promise<BookingWithUser> => {
+const getSingleBookingWithUserService = async (
+  bookingId: number,
+): Promise<BookingWithUser> => {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: {
-      user: true
-    }
+      user: true,
+    },
   });
 
   if (!booking) {
@@ -328,35 +448,33 @@ const getSingleBookingWithUserService = async (bookingId: number): Promise<Booki
       name: booking.user.name,
       email: booking.user.email,
       contactNumber: booking.user.contactNumber,
-      profilePhoto: booking.user.profilePhoto
-    }
+      profilePhoto: booking.user.profilePhoto,
+    },
   };
 };
-
-
-
 
 interface BookingPaginationOptions {
   page?: number;
   limit?: number;
-  searchTerm?: string; 
+  searchTerm?: string;
 }
 
 const getAllBookingsWithUserService = async (
-  options: BookingPaginationOptions
-): Promise<{ meta: { page: number; limit: number; total: number }; data: BookingWithUser[] }> => {
+  options: BookingPaginationOptions,
+): Promise<{
+  meta: { page: number; limit: number; total: number };
+  data: BookingWithUser[];
+}> => {
   const page = options.page && options.page > 0 ? options.page : 1;
   const limit = options.limit && options.limit > 0 ? options.limit : 10;
   const skip = (page - 1) * limit;
 
- 
   const whereConditions: any = {};
   if (options.searchTerm) {
     whereConditions.user = {
       email: { contains: options.searchTerm, mode: "insensitive" },
     };
   }
-
 
   const total = await prisma.booking.count({ where: whereConditions });
 
@@ -391,10 +509,6 @@ const getAllBookingsWithUserService = async (
   };
 };
 
-
-
-
-
 export const BookingServices = {
   bookMultipleRooms,
   getAvailableRoomsService,
@@ -403,9 +517,9 @@ export const BookingServices = {
   deleteRoomTypeService,
   cancelBookingByIdService,
   getSingleBookingWithUserService,
-  getAllBookingsWithUserService,  
+  getAllBookingsWithUserService,
+  bookMultipleRoomsWithPayment
 };
-
 
 // // {
 //   "userId": 10,
@@ -419,8 +533,6 @@ export const BookingServices = {
 //   "children": 1
 // }
 
-
 // GET http://localhost:5000/api/booking/available?checkIn=2026-02-20&checkOut=2026-02-23
-
 
 // GET http://localhost:5000/api/booking/rooms-by-date?checkIn=2026-02-20&checkOut=2026-02-23

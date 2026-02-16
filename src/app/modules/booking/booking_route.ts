@@ -4,16 +4,24 @@ import { BookingController } from "./booking_controller";
 const router = express.Router();
 
 
+router.post(
+  "/book",
+  BookingController.bookMultipleRoomsController
+);
+
+router.post("/online-book",
+  BookingController.OnlinebookMultipleRoomsController
+);
+
 router.get(
   "/",
   BookingController.getAllBookingsController
 );
 
 
-router.post(
-  "/book",
-  BookingController.bookMultipleRoomsController
-);
+
+
+
 
 router.patch(
   "/cancel/:id",

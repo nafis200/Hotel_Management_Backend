@@ -19,6 +19,8 @@ const retrieveCharge = catchAsync(async (req: Request, res: Response) => {
   const tap_id = req.params.id as string;
   const result = await TapService.retrieveCharge(tap_id);
 
+
+
   sendResponse<typeof result>(res, {
     success: true,
     status: 200,
@@ -68,7 +70,7 @@ export const tapCallback = async (req: Request, res: Response) => {
     
     const result = await TapService.retrieveCharge(tap_id);
 
-    console.log(result)
+    console.log(result,"tap Callback")
 
   
     const status = result?.data?.status;
