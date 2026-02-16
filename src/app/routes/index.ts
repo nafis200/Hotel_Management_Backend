@@ -4,6 +4,7 @@ import { AuthRoutes } from "../modules/Auth/auth.route";
 import { RoomCategoryRoutes } from "../modules/roomCategory/roomcategory.route";
 import { RoomRoutes } from "../modules/room/RoomControllers.route";
 import { BookingRoutes } from "../modules/booking/booking_route";
+import { TapRoutes } from "../modules/tap/tap.route";
 
 const router = express.Router();
 
@@ -24,6 +25,10 @@ const moduleRoutes = [
   {
     path:"/book",
     route:BookingRoutes,
+  },
+  {
+    path:"/tap",
+    route:TapRoutes 
   }
 ];
 

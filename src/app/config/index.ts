@@ -39,6 +39,11 @@ export default {
        cloud_api_key:process.env.CLOUDINARY_API_KEY,
        cloud_secret_key:process.env.CLOUDINARY_SECRET_KEY
     },
+    tap:{
+        tap_secret_key:process.env.Tap_srcret_key,
+        tap_services_url:process.env.Tap_services_url,
+        tap_callback_url:process.env.Tap_callback_url
+    },
 
   databaseUrl: process.env.DATABASE_URL,
   googleclientid:process.env.GOOGLE_CLIENT_ID,
