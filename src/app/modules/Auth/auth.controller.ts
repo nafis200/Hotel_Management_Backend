@@ -114,16 +114,15 @@ const ChangePassword = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const newPassword = req.body.newPassword;
     const oldPassword = req.body.oldPassword;
-    const decodedToken = {
-      id: "google_123456",
-      email: "test@gmail.com",
-      role: "user",
-    };
+
+   
+
+    
 
     await AuthServices.ChangePassword(
       oldPassword,
       newPassword,
-      decodedToken as JwtPayload,
+      req.user as JwtPayload,
     );
 
     sendResponse(res, {
