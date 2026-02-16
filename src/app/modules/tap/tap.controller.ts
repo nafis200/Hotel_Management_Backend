@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
 import { TapService } from "./tap.services";
-
+import prisma from "../../../shared/prisma";
 
 const createCharge = catchAsync(async (req: Request, res: Response) => {
   const result = await TapService.createCharge(req.body);
@@ -18,8 +18,6 @@ const createCharge = catchAsync(async (req: Request, res: Response) => {
 const retrieveCharge = catchAsync(async (req: Request, res: Response) => {
   const tap_id = req.params.id as string;
   const result = await TapService.retrieveCharge(tap_id);
-
-
 
   sendResponse<typeof result>(res, {
     success: true,
@@ -54,26 +52,51 @@ const listCharges = catchAsync(async (req: Request, res: Response) => {
 
 export const tapCallback = async (req: Request, res: Response) => {
   try {
-
-    console.log("hellow i am charge Id")
+    console.log("hellow i am charge Id");
 
     // Tap redirect এ সাধারণত charge id query param এ পাঠায়
     const tap_id = req.query.tap_id as string;
 
-    console.log(req.query)
-
+    console.log(req.query);
 
     if (!tap_id) {
       return res.status(400).send("Charge ID not found in query params");
     }
 
-    
     const result = await TapService.retrieveCharge(tap_id);
 
-    console.log(result,"tap Callback")
+    const extractedData = {
+      id: result.id,
+      status: result.status,
+      amount: result.amount,
+      currency: result.currency,
+      metadata: result.metadata,
+      reference: result.reference,
+      customer: result.customer,
+    };
 
-  
+    const isSuccess = result.status === "CAPTURED";
+
+    const booking = await prisma.booking.create({
+      data: {
+        userId: Number(result.metadata.userId),
+        checkIn: new Date(result.metadata.checkIn),
+        checkOut: new Date(result.metadata.checkOut),
+        paymentId: result.id,
+        adults: Number(result.metadata.adults),
+        children: Number(result.metadata.children),
+        currency: result.currency,
+        totalAmount: result.amount,
+        status: isSuccess ? "CONFIRMED" : "PENDING_PAYMENT",
+      },
+    });
+
+    console.log(booking)
+
     const status = result?.data?.status;
+
+    console.log(status)
+
     if (status === "CAPTURED") {
       console.log("Payment SUCCESS");
     } else if (status === "DECLINED") {
@@ -83,8 +106,9 @@ export const tapCallback = async (req: Request, res: Response) => {
     }
 
     // Optional: User কে frontend এ redirect করা
-    res.redirect(`http://localhost:3000/payment-result?status=${status}&tap_id=${tap_id}`);
-
+    res.redirect(
+      `http://localhost:3000/payment-result?status=${status}&tap_id=${tap_id}`,
+    );
   } catch (error) {
     console.error("Error in callback:", error);
     res.status(500).send("Internal Server Error");

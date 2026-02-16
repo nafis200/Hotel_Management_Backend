@@ -56,8 +56,10 @@ model Booking {
   user        User     @relation(fields: [userId], references: [id])
   checkIn     DateTime
   checkOut    DateTime
+  paymentId   String?
   adults      Int
   children    Int @default(0)
+  currency    String?@default("SAR")
   totalAmount Int
   status      BookingStatus @default(PENDING_PAYMENT)
   createdAt   DateTime @default(now())
