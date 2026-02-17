@@ -17,15 +17,12 @@ interface MultiRoomBookingInput {
   children: number;
 }
 
-
-
 const TAP_SECRET_KEY = config.tap.tap_secret_key as string;
 const BASE_URL = config.tap.tap_services_url as string;
 const headers = {
   Authorization: `Bearer ${TAP_SECRET_KEY}`,
   "Content-Type": "application/json",
 };
-
 
 const createCharge = async (payload: {
   amount: number;
@@ -59,7 +56,6 @@ const createCharge = async (payload: {
   return response.data;
 };
 
-
 export const bookMultipleRoomsWithPayment = async (input: {
   userId: number;
   roomRequests: { roomTypeId: number; quantity: number }[];
@@ -90,7 +86,6 @@ export const bookMultipleRoomsWithPayment = async (input: {
 
   if (roomTypes.length !== roomRequests.length)
     throw new ApiError(404, "Some room types not found in the database");
-
 
   for (const request of roomRequests) {
     const { roomTypeId, quantity } = request;
@@ -124,7 +119,6 @@ export const bookMultipleRoomsWithPayment = async (input: {
     totalAmount += days * roomType.price * quantity;
   }
 
-
   const paymentResponse = await createCharge({
     amount: totalAmount,
     currency: "SAR",
@@ -144,10 +138,8 @@ export const bookMultipleRoomsWithPayment = async (input: {
     },
   });
 
-  return {url:paymentResponse.transaction.url};
+  return { url: paymentResponse.transaction.url };
 };
-
-
 
 const bookMultipleRooms = async (input: MultiRoomBookingInput) => {
   const { userId, roomRequests, checkIn, checkOut, adults, children } = input;
@@ -221,8 +213,6 @@ const bookMultipleRooms = async (input: MultiRoomBookingInput) => {
 
   return booking;
 };
-
-
 
 interface AvailableRoomType {
   roomTypeId: number;
@@ -321,6 +311,7 @@ const getRoomsByDateService = async (
   checkIn: Date,
   checkOut: Date,
 ): Promise<any> => {
+  console.log("helppppppppppp")
   if (!checkIn || !checkOut)
     throw new Error("checkIn and checkOut are required");
   checkIn.setHours(0, 0, 0, 0);
@@ -471,9 +462,7 @@ const getAllBookingsWithUserService = async (
 
   const whereConditions: any = {};
   if (options.searchTerm) {
-    whereConditions.user = {
-      email: { contains: options.searchTerm, mode: "insensitive" },
-    };
+    whereConditions.userId = Number(options.searchTerm);
   }
 
   const total = await prisma.booking.count({ where: whereConditions });
@@ -518,7 +507,7 @@ export const BookingServices = {
   cancelBookingByIdService,
   getSingleBookingWithUserService,
   getAllBookingsWithUserService,
-  bookMultipleRoomsWithPayment
+  bookMultipleRoomsWithPayment,
 };
 
 // // {

@@ -4,6 +4,7 @@ import { JwtPayload } from "jsonwebtoken";
 import { generateToken, verifyToken } from "./jwt";
 import ApiError from "../errors/ApiError";
 import config from "../config";
+import prisma from "../../shared/prisma";
 
 /**
  * 🔥 Fake in-memory users (NO DB)
@@ -57,39 +58,34 @@ export const createUserTokens = (user: any) => {
   };
 };
 
-/**
- * =========================
- * REFRESH TOKEN → NEW ACCESS TOKEN
- * =========================
- */
+
 export const createNewAccessTokenWithRefreshToken = async (
   refreshToken: string
 ) => {
   const verifiedRefreshToken = verifyToken(
     refreshToken,
-    "abcdef"
+    config.jwt.refresh_token_secret as string
   ) as JwtPayload;
 
-  // 🔍 find user from array
-  const isUserExist = users.find(
-    (u) => u.email === verifiedRefreshToken.email
-  );
+ 
+  const isUserExist = await prisma.user.findUnique({
+    where: { email: verifiedRefreshToken.email },
+  });
 
   if (!isUserExist) {
     throw new ApiError(httpStatus.BAD_REQUEST, "User does not exist");
   }
 
   if (
-    isUserExist.isActive === "BLOCKED" ||
-    isUserExist.isActive === "INACTIVE"
+    isUserExist.status === "BLOCKED"
   ) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      `User is ${isUserExist.isActive}`
+      `User is ${isUserExist.status}`
     );
   }
 
-  if (isUserExist.isDeleted) {
+  if (isUserExist.status === "DELETED") {
     throw new ApiError(httpStatus.BAD_REQUEST, "User is deleted");
   }
 
@@ -101,8 +97,8 @@ export const createNewAccessTokenWithRefreshToken = async (
 
   const accessToken = generateToken(
     jwtPayload,
-    "abc",
-    "5"
+    config.jwt.jwt_secret as string,
+    config.jwt.expires_in as string
   );
 
   return accessToken;

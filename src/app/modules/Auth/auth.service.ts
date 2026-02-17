@@ -122,7 +122,7 @@ const verifyEmailService = async (token: string) => {
     throw new ApiError(httpStatus.FORBIDDEN, "Token is invalid!");
   }
 
-  console.log(payload, "verified payload");
+  
 
   const user = await prisma.user.findUnique({
     where: { email: payload.email },

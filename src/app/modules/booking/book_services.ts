@@ -48,7 +48,7 @@ const createCharge = async (payload: {
 
 export const bookMultipleRoomsWithPayment = async (input: {
   userId: number;
-  roomRequests: { roomTypeId: number; quantity: number }[];
+  roomRequests: { Id: number; quantity: number }[];
   checkIn: string;
   checkOut: string;
   adults: number;
@@ -69,22 +69,22 @@ export const bookMultipleRoomsWithPayment = async (input: {
 
   const userName = user.name || "Test User";
 
-  const roomTypeIds = roomRequests.map((r) => r.roomTypeId);
-  const roomTypes = await prisma.roomType.findMany({
-    where: { id: { in: roomTypeIds } },
+  const Ids = roomRequests.map((r) => r.Id);
+  const s = await prisma..findMany({
+    where: { id: { in: Ids } },
   });
 
-  if (roomTypes.length !== roomRequests.length)
+  if (s.length !== roomRequests.length)
     throw new ApiError(404, "Some room types not found in the database");
 
 
   for (const request of roomRequests) {
-    const { roomTypeId, quantity } = request;
-    const roomType = roomTypes.find((r) => r.id === roomTypeId)!;
+    const { Id, quantity } = request;
+    const  = s.find((r) => r.id === Id)!;
 
     const availableRooms = await prisma.room.findMany({
       where: {
-        roomTypeId,
+        Id,
         bookings: {
           none: {
             booking: {
@@ -100,14 +100,14 @@ export const bookMultipleRoomsWithPayment = async (input: {
     if (availableRooms.length < quantity) {
       throw new ApiError(
         404,
-        `Not enough available rooms for roomTypeId ${roomTypeId}`,
+        `Not enough available rooms for Id ${Id}`,
       );
     }
 
     const days = Math.ceil(
       (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24),
     );
-    totalAmount += days * roomType.price * quantity;
+    totalAmount += days * .price * quantity;
   }
 
 
