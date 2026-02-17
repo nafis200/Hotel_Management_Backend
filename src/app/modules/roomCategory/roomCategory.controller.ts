@@ -4,19 +4,31 @@ import httpStatus from "http-status";
 import { RoomTypeServices } from "./roomCategory.services";
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
-
+import { fileUploader } from "../../helper/fileUploader";
 
 const createRoomType = catchAsync(async (req: Request, res: Response) => {
-  const roomType = await RoomTypeServices.createRoomType(req.body);
+  const files = req.files as Express.Multer.File[];
+
+  const bodyData = JSON.parse(req.body.body);
+
+  const images = await Promise.all(
+    files.map(async (file) => {
+      const result = await fileUploader.uploadToCloudinary(file);
+      return result?.secure_url;
+    }),
+  );
+
+  
+  const roomType = await RoomTypeServices.createRoomType(bodyData,images);
 
   sendResponse(res, {
     status: httpStatus.CREATED,
     success: true,
     message: "RoomType created successfully",
-    data: roomType,
+    data: roomType
+   
   });
 });
-
 
 const getAllRoomTypes = catchAsync(async (req: Request, res: Response) => {
   const roomTypes = await RoomTypeServices.getAllRoomTypes();
@@ -28,7 +40,6 @@ const getAllRoomTypes = catchAsync(async (req: Request, res: Response) => {
     data: roomTypes,
   });
 });
-
 
 const getRoomTypeById = catchAsync(async (req: Request, res: Response) => {
   const id = Number(req.params.id);
@@ -42,7 +53,6 @@ const getRoomTypeById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
 const updateRoomType = catchAsync(async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   const updated = await RoomTypeServices.updateRoomType(id, req.body);
@@ -54,7 +64,6 @@ const updateRoomType = catchAsync(async (req: Request, res: Response) => {
     data: updated,
   });
 });
-
 
 const deleteRoomType = catchAsync(async (req: Request, res: Response) => {
   const id = Number(req.params.id);
@@ -69,9 +78,9 @@ const deleteRoomType = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const RoomTypeControllers = {
- createRoomType, 
- getAllRoomTypes,
- getRoomTypeById,
- updateRoomType,
- deleteRoomType
-}
+  createRoomType,
+  getAllRoomTypes,
+  getRoomTypeById,
+  updateRoomType,
+  deleteRoomType,
+};

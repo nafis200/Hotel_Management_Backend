@@ -2,8 +2,14 @@ import prisma from "../../../shared/prisma";
 import ApiError from "../../errors/ApiError";
 
 
-const createRoomType = async (data: any) => {
-  const { name, description, price, images, facilities } = data;
+const createRoomType = async (data: any, images:any) => {
+
+  console.log(data)
+
+  const { name, description, price, facilities } = data;
+
+  
+
   const roomType = await prisma.roomType.create({
     data: { name, description, price, images, facilities },
   });
