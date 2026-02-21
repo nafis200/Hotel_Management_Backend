@@ -69,8 +69,6 @@ export const bookMultipleRoomsWithPayment = async (input: {
   const checkInDate = new Date(checkIn);
   const checkOutDate = new Date(checkOut);
 
-  let totalAmount = 0;
-
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { name: true, email: true, contactNumber: true },
@@ -79,19 +77,14 @@ export const bookMultipleRoomsWithPayment = async (input: {
 
   const userName = user.name || "Test User";
 
-  const roomTypeIds = roomRequests.map((r) => r.roomTypeId);
-  const roomTypes = await prisma.roomType.findMany({
-    where: { id: { in: roomTypeIds } },
-  });
-
-  if (roomTypes.length !== roomRequests.length)
-    throw new ApiError(404, "Some room types not found in the database");
+  // Validate room availability and calculate total
+  const allocatedRooms: { roomId: number; roomTypeId: number }[] = [];
+  let totalAmount = 0;
 
   for (const request of roomRequests) {
     const { roomTypeId, quantity } = request;
-    const roomType = roomTypes.find((r) => r.id === roomTypeId)!;
 
-    const availableRooms = await prisma.room.findMany({
+    const roomsToAllocate = await prisma.room.findMany({
       where: {
         roomTypeId,
         bookings: {
@@ -99,6 +92,7 @@ export const bookMultipleRoomsWithPayment = async (input: {
             booking: {
               checkIn: { lt: checkOutDate },
               checkOut: { gt: checkInDate },
+              status: { not: "CANCELLED" },
             },
           },
         },
@@ -106,19 +100,47 @@ export const bookMultipleRoomsWithPayment = async (input: {
       take: quantity,
     });
 
-    if (availableRooms.length < quantity) {
+    if (roomsToAllocate.length < quantity) {
       throw new ApiError(
         404,
-        `Not enough available rooms for roomTypeId ${roomTypeId}`,
+        `Not enough available rooms for room type ID ${roomTypeId}`,
       );
     }
+
+    const roomType = await prisma.roomType.findUnique({
+      where: { id: roomTypeId },
+    });
 
     const days = Math.ceil(
       (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24),
     );
-    totalAmount += days * roomType.price * quantity;
+
+    totalAmount += days * (roomType?.price || 0) * quantity;
+
+    roomsToAllocate.forEach((room) =>
+      allocatedRooms.push({ roomId: room.id, roomTypeId }),
+    );
   }
 
+  // Create Booking with PENDING_PAYMENT status
+  const booking = await prisma.$transaction(async (tx) => {
+    return tx.booking.create({
+      data: {
+        userId,
+        checkIn: checkInDate,
+        checkOut: checkOutDate,
+        adults,
+        children,
+        totalAmount,
+        status: "PENDING_PAYMENT",
+        rooms: {
+          create: allocatedRooms.map((r) => ({ roomId: r.roomId })),
+        },
+      },
+    });
+  });
+
+  // Initiate Payment with bookingId in metadata
   const paymentResponse = await createCharge({
     amount: totalAmount,
     currency: "SAR",
@@ -126,16 +148,17 @@ export const bookMultipleRoomsWithPayment = async (input: {
     email: user.email || "test@example.com",
     phone: user.contactNumber || "500000000",
     countryCode: "966",
-    description: `Booking for user ${userId}`,
+    description: `Booking for user ${userId} - Booking ID: ${booking.id}`,
     metadata: {
+      bookingId: String(booking.id),
       userId: String(userId),
-      checkIn: checkInDate.toISOString(),
-      checkOut: checkOutDate.toISOString(),
-      adults,
-      children,
-      roomRequests: JSON.stringify(roomRequests),
-      date: new Date().toISOString(),
     },
+  });
+
+  // Update booking with payment reference (Charge ID)
+  await prisma.booking.update({
+    where: { id: booking.id },
+    data: { paymentId: paymentResponse.id },
   });
 
   return { url: paymentResponse.transaction.url };
@@ -396,7 +419,7 @@ const cancelBookingByIdService = async (bookingId: number) => {
 };
 
 interface BookingWithUser {
-  bookingId: number;
+  id: number;
   checkIn: Date;
   checkOut: Date;
   adults: number;
@@ -410,6 +433,7 @@ interface BookingWithUser {
     contactNumber?: string | null;
     profilePhoto?: string | null;
   };
+  rooms?: any[];
 }
 
 const getSingleBookingWithUserService = async (
@@ -419,6 +443,15 @@ const getSingleBookingWithUserService = async (
     where: { id: bookingId },
     include: {
       user: true,
+      rooms: {
+        include: {
+          room: {
+            include: {
+              roomType: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -427,7 +460,7 @@ const getSingleBookingWithUserService = async (
   }
 
   return {
-    bookingId: booking.id,
+    id: booking.id,
     checkIn: booking.checkIn,
     checkOut: booking.checkOut,
     adults: booking.adults,
@@ -441,6 +474,7 @@ const getSingleBookingWithUserService = async (
       contactNumber: booking.user.contactNumber,
       profilePhoto: booking.user.profilePhoto,
     },
+    rooms: booking.rooms,
   };
 };
 
@@ -467,16 +501,27 @@ const getAllBookingsWithUserService = async (
 
   const total = await prisma.booking.count({ where: whereConditions });
 
-  const bookings = await prisma.booking.findMany({
+  const bookings = (await prisma.booking.findMany({
     where: whereConditions,
-    include: { user: true },
+    include: {
+      user: true,
+      rooms: {
+        include: {
+          room: {
+            include: {
+              roomType: true,
+            },
+          },
+        },
+      },
+    },
     skip,
     take: limit,
     orderBy: { createdAt: "desc" },
-  });
+  })) as any[];
 
-  const data: BookingWithUser[] = bookings.map((booking) => ({
-    bookingId: booking.id,
+  const data: BookingWithUser[] = bookings.map((booking: any) => ({
+    id: booking.id,
     checkIn: booking.checkIn,
     checkOut: booking.checkOut,
     adults: booking.adults,
@@ -490,6 +535,7 @@ const getAllBookingsWithUserService = async (
       contactNumber: booking.user.contactNumber,
       profilePhoto: booking.user.profilePhoto,
     },
+    rooms: booking.rooms,
   }));
 
   return {

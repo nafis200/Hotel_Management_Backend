@@ -3,6 +3,7 @@ import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
 import { TapService } from "./tap.services";
 import prisma from "../../../shared/prisma";
+import config from "../../config";
 
 const createCharge = catchAsync(async (req: Request, res: Response) => {
   const result = await TapService.createCharge(req.body);
@@ -52,66 +53,39 @@ const listCharges = catchAsync(async (req: Request, res: Response) => {
 
 export const tapCallback = async (req: Request, res: Response) => {
   try {
-    console.log("hellow i am charge Id");
-
-    // Tap redirect এ সাধারণত charge id query param এ পাঠায়
     const tap_id = req.query.tap_id as string;
-
-    console.log(req.query);
 
     if (!tap_id) {
       return res.status(400).send("Charge ID not found in query params");
     }
 
     const result = await TapService.retrieveCharge(tap_id);
+    const bookingId = result.metadata?.bookingId;
 
-    const extractedData = {
-      id: result.id,
-      status: result.status,
-      amount: result.amount,
-      currency: result.currency,
-      metadata: result.metadata,
-      reference: result.reference,
-      customer: result.customer,
-    };
+    if (!bookingId) {
+      console.error("Booking ID not found in charge metadata");
+      return res.redirect(`${config.frontend_url}/payment-results?status=error&message=MissingMetadata`);
+    }
 
     const isSuccess = result.status === "CAPTURED";
 
-    const booking = await prisma.booking.create({
+    // Update the existing booking status
+    const updatedBooking = await prisma.booking.update({
+      where: { id: Number(bookingId) },
       data: {
-        userId: Number(result.metadata.userId),
-        checkIn: new Date(result.metadata.checkIn),
-        checkOut: new Date(result.metadata.checkOut),
-        paymentId: result.id,
-        adults: Number(result.metadata.adults),
-        children: Number(result.metadata.children),
-        currency: result.currency,
-        totalAmount: result.amount,
         status: isSuccess ? "CONFIRMED" : "PENDING_PAYMENT",
       },
     });
 
-    console.log(booking)
+    console.log(`Booking ${bookingId} updated to ${updatedBooking.status}`);
 
-    const status = result?.data?.status;
-
-    console.log(status)
-
-    if (status === "CAPTURED") {
-      console.log("Payment SUCCESS");
-    } else if (status === "DECLINED") {
-      console.log("Payment FAILED");
-    } else {
-      console.log("Payment Pending / In Progress");
-    }
-
-    // Optional: User কে frontend এ redirect করা
+    // Redirect to frontend application
     res.redirect(
-      `http://localhost:3000/payment-result?status=${status}&tap_id=${tap_id}`,
+      `${config.frontend_url}/payment-results?status=${result.status}&bookingId=${bookingId}`,
     );
   } catch (error) {
     console.error("Error in callback:", error);
-    res.status(500).send("Internal Server Error");
+    res.redirect(`${config.frontend_url}/payment-results?status=error`);
   }
 };
 
