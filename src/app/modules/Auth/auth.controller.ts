@@ -10,6 +10,7 @@ import sendResponse from "../../../shared/sendResponse";
 import catchAsync from "../../../shared/catchAsync";
 import ApiError from "../../errors/ApiError";
 import { fileUploader } from "../../helper/fileUploader";
+import config from "../../config";
 
 
 const registerUser = catchAsync(
@@ -26,29 +27,22 @@ const registerUser = catchAsync(
 );
 
 
-
 export const verifyEmail = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { email, token } = req.query;
-
 
     if (!email || !token) {
       throw new ApiError(httpStatus.BAD_REQUEST, "Email and token are required");
     }
 
-
     const result = await AuthServices.verifyEmailService(token as string);
-
-
 
     setAuthCookie(res, {
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
     });
 
-    res.redirect("https://www.google.com/search?q=vjudge&oq=&gs_lcrp=EgZjaHJvbWUqCQgEECMYJxjqAjIJCAAQIxgnGOoCMgkIARAjGCcY6gIyCQgCECMYJxjqAjIJCAMQIxgnGOoCMgkIBBAjGCcY6gIyCQgFECMYJxjqAjIJCAYQIxgnGOoCMgkIBxAuGCcY6gLSAQkzNDIyajBqMTWoAgiwAgHxBRYBsPTx72yT8QUWAbD08e9skw&sourceid=chrome&ie=UTF-8");
-
-    // it must be reddireect login
+    res.redirect(`${config.frontend_url}/login`);
   }
 );
 
@@ -69,8 +63,6 @@ const credentialsLogin = catchAsync(
 const getNewAccessToken = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const refreshToken = req.cookies.refreshToken;
-
-    
 
     if (!refreshToken) {
       throw new ApiError(
@@ -98,11 +90,13 @@ const logout = catchAsync(
       httpOnly: true,
       secure: false,
       sameSite: "lax",
+      path: "/",
     });
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: false,
       sameSite: "lax",
+      path: "/",
     });
 
     sendResponse(res, {
@@ -117,10 +111,6 @@ const ChangePassword = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const newPassword = req.body.newPassword;
     const oldPassword = req.body.oldPassword;
-
-   
-
-    
 
     await AuthServices.ChangePassword(
       oldPassword,
@@ -151,82 +141,79 @@ const googleCallbackController = catchAsync(
 
     const tokenInfo = createUserTokens(user);
 
-
     setAuthCookie(res, tokenInfo);
-    res.redirect(
-      "https://www.google.com/search?q=programming+hero+level+2&rlz=1C1BNSD_enBD1125BD1126&sourceid=chrome&ie=UTF-8",
-    );
+    res.redirect(`${config.frontend_url}/${redirectTo}`);
   },
 );
 
 
 const forgotPassword = catchAsync(async (req: Request, res: Response) => {
 
-    await AuthServices.forgotPassword(req.body);
+  await AuthServices.forgotPassword(req.body);
 
-    sendResponse(res, {
-        status: httpStatus.OK,
-        success: true,
-        message: "Check your email!",
-        data: null
-    })
+  sendResponse(res, {
+    status: httpStatus.OK,
+    success: true,
+    message: "Check your email!",
+    data: null
+  })
 });
 
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
 
-    const token = req.headers.authorization || "";
+  const token = req.headers.authorization || "";
 
-    await AuthServices.resetPassword(token, req.body);
+  await AuthServices.resetPassword(token, req.body);
 
-    sendResponse(res, {
-        status: httpStatus.OK,
-        success: true,
-        message: "Password Reset!",
-        data: null
-    })
+  sendResponse(res, {
+    status: httpStatus.OK,
+    success: true,
+    message: "Password Reset!",
+    data: null
+  })
 });
 
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
 
-    const result = await AuthServices.getAllUsers();
+  const result = await AuthServices.getAllUsers();
 
-    sendResponse(res, {
-        status: httpStatus.OK,
-        success: true,
-        message: "All users fetched successfully",
-        data: result
-    });
+  sendResponse(res, {
+    status: httpStatus.OK,
+    success: true,
+    message: "All users fetched successfully",
+    data: result
+  });
 
 });
 
 const getSingleUser = catchAsync(async (req: Request, res: Response) => {
 
-    const { id } = req.params;
+  const { id } = req.params;
 
-    const result = await AuthServices.getSingleUser(Number(id));
+  const result = await AuthServices.getSingleUser(Number(id));
 
-    sendResponse(res, {
-        status: httpStatus.OK,
-        success: true,
-        message: "User fetched successfully",
-        data: result
-    });
+  sendResponse(res, {
+    status: httpStatus.OK,
+    success: true,
+    message: "User fetched successfully",
+    data: result
+  });
 
 });
 
 
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
 
-    const { id } = req.params;
+  const { id } = req.params;
 
-    const result = await AuthServices.deleteUser(Number(id));
+  const result = await AuthServices.deleteUser(Number(id));
 
-    sendResponse(res, {
-        status: httpStatus.OK,
-        success: true,
-        message: "User deleted successfully",
-        data: result
-    });
+  sendResponse(res, {
+    status: httpStatus.OK,
+    success: true,
+    message: "User deleted successfully",
+    data: result
+  });
 
 });
 
@@ -235,9 +222,6 @@ const uploadImages = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
 
     const files = req.files as Express.Multer.File[];
-
-    console.log("Body Data:", req.body);
-    console.log("Uploaded Files:", files);
 
     const uploadedFiles = await Promise.all(
       files.map(async (file) => {
@@ -261,6 +245,27 @@ const uploadImages = catchAsync(
 );
 
 
+const getMyProfile = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user as any;
+
+  if (!user || !user.userId) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, "User ID not found in token");
+  }
+
+  const result = await AuthServices.getMyProfile(Number(user.userId));
+
+  if (!result) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User profile not found in database");
+  }
+
+  sendResponse(res, {
+    status: httpStatus.OK,
+    success: true,
+    message: "User profile fetched successfully",
+    data: result,
+  });
+});
+
 export const AuthControllers = {
   registerUser,
   credentialsLogin,
@@ -274,5 +279,6 @@ export const AuthControllers = {
   deleteUser,
   getSingleUser,
   getAllUsers,
-  uploadImages 
+  uploadImages,
+  getMyProfile
 };

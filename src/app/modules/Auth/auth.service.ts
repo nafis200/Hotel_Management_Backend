@@ -122,7 +122,7 @@ const verifyEmailService = async (token: string) => {
     throw new ApiError(httpStatus.FORBIDDEN, "Token is invalid!");
   }
 
-  
+
 
   const user = await prisma.user.findUnique({
     where: { email: payload.email },
@@ -345,6 +345,30 @@ const deleteUser = async (id: number) => {
   return deletedUser;
 };
 
+const getMyProfile = async (id: number) => {
+  if (!id) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "User ID is required for profile fetch");
+  }
+
+  const result = await prisma.user.findUnique({
+    where: {
+      id,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      verified: true,
+      role: true,
+      status: true,
+      profilePhoto: true,
+      createdAt: true,
+    },
+  });
+
+  return result;
+};
+
 export const AuthServices = {
   credentialsLogin,
   getNewAccessToken,
@@ -356,4 +380,5 @@ export const AuthServices = {
   getAllUsers,
   getSingleUser,
   deleteUser,
+  getMyProfile,
 };

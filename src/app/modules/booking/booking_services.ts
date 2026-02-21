@@ -311,7 +311,7 @@ const getRoomsByDateService = async (
   checkIn: Date,
   checkOut: Date,
 ): Promise<any> => {
-  console.log("helppppppppppp")
+  // console.log("helppppppppppp")
   if (!checkIn || !checkOut)
     throw new Error("checkIn and checkOut are required");
   checkIn.setHours(0, 0, 0, 0);

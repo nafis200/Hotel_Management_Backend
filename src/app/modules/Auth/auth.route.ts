@@ -15,7 +15,7 @@ router.post("/login", AuthControllers.credentialsLogin);
 router.post("/refresh-token", AuthControllers.getNewAccessToken);
 router.post("/logout", AuthControllers.logout);
 
-router.post("/change-password",auth("USER","ADMIN"),AuthControllers.ChangePassword);
+router.post("/change-password", auth("USER", "ADMIN"), AuthControllers.ChangePassword);
 
 router.post("/forgot-password", AuthControllers.forgotPassword);
 
@@ -40,14 +40,10 @@ router.get(
 
 router.get("/", AuthControllers.getAllUsers);
 
+router.get("/me", auth(), AuthControllers.getMyProfile);
+
 router.get("/:id", AuthControllers.getSingleUser);
 
 router.delete("/:id", AuthControllers.deleteUser);
-
-router.post(
-  "/image",
-  fileUploader.upload.array("files"),
-  AuthControllers.uploadImages,
-);
 
 export const AuthRoutes = router;

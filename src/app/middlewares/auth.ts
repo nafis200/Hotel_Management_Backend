@@ -11,10 +11,9 @@ import config from "../config";
 const auth = (...roles: string[]) => {
     return async (req: Request & { user?: any }, res: Response, next: NextFunction) => {
         try {
-            const token = req.headers.authorization
-              
-           
-            
+            const headerToken = req.headers.authorization;
+            const cookieToken = req.cookies?.accessToken;
+            const token = headerToken || cookieToken;
 
             if (!token) {
                 throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!")
@@ -29,7 +28,8 @@ const auth = (...roles: string[]) => {
             }
             next()
         }
-        catch (err) {
+        catch (err: any) {
+            console.error("AUTH MIDDLEWARE ERROR:", err.message, err.stack);
             next(err)
         }
     }
