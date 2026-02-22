@@ -10,7 +10,7 @@ import {
 import ApiError from "../../errors/ApiError";
 import config from "../../config";
 import prisma from "../../../shared/prisma";
-import { UserStatus } from "@prisma/client";
+import { UserRole, UserStatus } from "@prisma/client";
 import { jwtHelpers } from "../../helper/jwtHelper";
 import emailSender from "../../utils/emailSender";
 import * as bcrypt from "bcrypt";
