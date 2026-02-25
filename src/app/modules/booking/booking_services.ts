@@ -184,6 +184,7 @@ const bookMultipleRooms = async (input: MultiRoomBookingInput) => {
             booking: {
               checkIn: { lt: checkOutDate },
               checkOut: { gt: checkInDate },
+              status: { not: "CANCELLED" },
             },
           },
         },
@@ -260,6 +261,8 @@ const getAvailableRoomsService = async (
     throw new Error("checkOut must be greater than checkIn");
   }
 
+  // Adding check to prevent queries for past dates if necessary, although for simple view, a past query is mostly harmless for reading. 
+
   checkIn.setHours(0, 0, 0, 0);
   checkOut.setHours(0, 0, 0, 0);
 
@@ -272,6 +275,7 @@ const getAvailableRoomsService = async (
               booking: {
                 checkIn: { lt: checkOut },
                 checkOut: { gt: checkIn },
+                status: { not: "CANCELLED" },
               },
             },
           },
@@ -356,7 +360,11 @@ const getRoomsByDateService = async (
       const bookingCheckIn = new Date(br.booking.checkIn);
       const bookingCheckOut = new Date(br.booking.checkOut);
 
-      return checkIn < bookingCheckOut && checkOut > bookingCheckIn;
+      return (
+        checkIn < bookingCheckOut &&
+        checkOut > bookingCheckIn &&
+        br.booking.status !== "CANCELLED"
+      );
     });
 
     if (isBooked) {
