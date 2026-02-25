@@ -28,23 +28,27 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      const allowedOrigins = [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        process.env.FRONTEND_URL,
-      ].filter(Boolean);
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  }),
-);
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "https://hotel-management-frontend-ivory.vercel.app",
+  process.env.FRONTEND_URL,
+].filter(Boolean) as string[];
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin as string;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Cookie");
+  if (req.method === "OPTIONS") {
+    res.sendStatus(200);
+    return;
+  }
+  next();
+});
 
 app.use(express.static(path.join(__dirname, "../public")));
 

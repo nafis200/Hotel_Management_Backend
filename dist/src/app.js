@@ -4,7 +4,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const http_status_1 = __importDefault(require("http-status"));
 const passport_1 = __importDefault(require("passport"));
@@ -24,10 +23,26 @@ app.use((0, express_session_1.default)({
 }));
 app.use(passport_1.default.initialize());
 app.use(passport_1.default.session());
-app.use((0, cors_1.default)({
-    origin: ["http://localhost:3000", "http://localhost:3001", "https://hotel-management-frontend-gamma.vercel.app"], // Add your product URL here
-    credentials: true,
-}));
+const allowedOrigins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://hotel-management-frontend-ivory.vercel.app",
+    process.env.FRONTEND_URL,
+].filter(Boolean);
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader("Access-Control-Allow-Origin", origin);
+    }
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Cookie");
+    if (req.method === "OPTIONS") {
+        res.sendStatus(200);
+        return;
+    }
+    next();
+});
 app.use(express_1.default.static(path_1.default.join(__dirname, "../public")));
 app.get("/", (req, res) => {
     res.send({

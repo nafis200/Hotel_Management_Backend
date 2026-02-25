@@ -20,9 +20,15 @@ const auth = (...roles) => {
     return (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
         var _a;
         try {
-            const headerToken = req.headers.authorization;
-            const cookieToken = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.accessToken;
-            const token = headerToken || cookieToken;
+            let token = req.headers.authorization;
+            // If it's a Bearer token, strip the prefix
+            if (token && token.startsWith("Bearer ")) {
+                token = token.split(" ")[1];
+            }
+            else if (!token) {
+                // If no authorization header, check cookies
+                token = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.accessToken;
+            }
             if (!token) {
                 throw new ApiError_1.default(http_status_1.default.UNAUTHORIZED, "You are not authorized!");
             }

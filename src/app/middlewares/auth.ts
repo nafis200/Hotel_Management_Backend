@@ -11,9 +11,15 @@ import config from "../config";
 const auth = (...roles: string[]) => {
     return async (req: Request & { user?: any }, res: Response, next: NextFunction) => {
         try {
-            const headerToken = req.headers.authorization;
-            const cookieToken = req.cookies?.accessToken;
-            const token = headerToken || cookieToken;
+            let token = req.headers.authorization;
+
+            // If it's a Bearer token, strip the prefix
+            if (token && token.startsWith("Bearer ")) {
+                token = token.split(" ")[1];
+            } else if (!token) {
+                // If no authorization header, check cookies
+                token = req.cookies?.accessToken;
+            }
 
             if (!token) {
                 throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!")

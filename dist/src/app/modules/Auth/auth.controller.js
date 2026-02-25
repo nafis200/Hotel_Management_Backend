@@ -68,16 +68,17 @@ const getNewAccessToken = (0, catchAsync_1.default)((req, res, next) => __awaite
     });
 }));
 const logout = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const isProduction = process.env.NODE_ENV === "production";
     res.clearCookie("accessToken", {
         httpOnly: true,
-        secure: false,
-        sameSite: "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
         path: "/",
     });
     res.clearCookie("refreshToken", {
         httpOnly: true,
-        secure: false,
-        sameSite: "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
         path: "/",
     });
     (0, sendResponse_1.default)(res, {

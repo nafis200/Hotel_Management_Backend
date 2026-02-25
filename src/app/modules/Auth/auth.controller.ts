@@ -86,16 +86,17 @@ const getNewAccessToken = catchAsync(
 );
 const logout = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+    const isProduction = process.env.NODE_ENV === "production";
     res.clearCookie("accessToken", {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       path: "/",
     });
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       path: "/",
     });
 
