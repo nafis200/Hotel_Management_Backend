@@ -17,6 +17,7 @@ const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
 const tap_services_1 = require("./tap.services");
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
+const config_1 = __importDefault(require("../../config"));
 const createCharge = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield tap_services_1.TapService.createCharge(req.body);
     (0, sendResponse_1.default)(res, {
@@ -58,55 +59,31 @@ const listCharges = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, vo
 const tapCallback = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
-        console.log("hellow i am charge Id");
-        // Tap redirect এ সাধারণত charge id query param এ পাঠায়
         const tap_id = req.query.tap_id;
-        console.log(req.query);
         if (!tap_id) {
             return res.status(400).send("Charge ID not found in query params");
         }
         const result = yield tap_services_1.TapService.retrieveCharge(tap_id);
-        const extractedData = {
-            id: result.id,
-            status: result.status,
-            amount: result.amount,
-            currency: result.currency,
-            metadata: result.metadata,
-            reference: result.reference,
-            customer: result.customer,
-        };
+        const bookingId = (_a = result.metadata) === null || _a === void 0 ? void 0 : _a.bookingId;
+        if (!bookingId) {
+            console.error("Booking ID not found in charge metadata");
+            return res.redirect(`${config_1.default.frontend_url}/payment-results?status=error&message=MissingMetadata`);
+        }
         const isSuccess = result.status === "CAPTURED";
-        const booking = yield prisma_1.default.booking.create({
+        // Update the existing booking status
+        const updatedBooking = yield prisma_1.default.booking.update({
+            where: { id: Number(bookingId) },
             data: {
-                userId: Number(result.metadata.userId),
-                checkIn: new Date(result.metadata.checkIn),
-                checkOut: new Date(result.metadata.checkOut),
-                paymentId: result.id,
-                adults: Number(result.metadata.adults),
-                children: Number(result.metadata.children),
-                currency: result.currency,
-                totalAmount: result.amount,
                 status: isSuccess ? "CONFIRMED" : "PENDING_PAYMENT",
             },
         });
-        console.log(booking);
-        const status = (_a = result === null || result === void 0 ? void 0 : result.data) === null || _a === void 0 ? void 0 : _a.status;
-        console.log(status);
-        if (status === "CAPTURED") {
-            console.log("Payment SUCCESS");
-        }
-        else if (status === "DECLINED") {
-            console.log("Payment FAILED");
-        }
-        else {
-            console.log("Payment Pending / In Progress");
-        }
-        // Optional: User কে frontend এ redirect করা
-        res.redirect(`http://localhost:3000/payment-result?status=${status}&tap_id=${tap_id}`);
+        console.log(`Booking ${bookingId} updated to ${updatedBooking.status}`);
+        // Redirect to frontend application
+        res.redirect(`${config_1.default.frontend_url}/payment-results?status=${result.status}&bookingId=${bookingId}`);
     }
     catch (error) {
         console.error("Error in callback:", error);
-        res.status(500).send("Internal Server Error");
+        res.redirect(`${config_1.default.frontend_url}/payment-results?status=error`);
     }
 });
 exports.tapCallback = tapCallback;

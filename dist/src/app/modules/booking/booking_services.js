@@ -47,7 +47,6 @@ const bookMultipleRoomsWithPayment = (input) => __awaiter(void 0, void 0, void 0
     const { userId, roomRequests, checkIn, checkOut, adults, children } = input;
     const checkInDate = new Date(checkIn);
     const checkOutDate = new Date(checkOut);
-    let totalAmount = 0;
     const user = yield prisma_1.default.user.findUnique({
         where: { id: userId },
         select: { name: true, email: true, contactNumber: true },
@@ -55,16 +54,12 @@ const bookMultipleRoomsWithPayment = (input) => __awaiter(void 0, void 0, void 0
     if (!user)
         throw new ApiError_1.default(404, "User not found");
     const userName = user.name || "Test User";
-    const roomTypeIds = roomRequests.map((r) => r.roomTypeId);
-    const roomTypes = yield prisma_1.default.roomType.findMany({
-        where: { id: { in: roomTypeIds } },
-    });
-    if (roomTypes.length !== roomRequests.length)
-        throw new ApiError_1.default(404, "Some room types not found in the database");
+    // Validate room availability and calculate total
+    const allocatedRooms = [];
+    let totalAmount = 0;
     for (const request of roomRequests) {
         const { roomTypeId, quantity } = request;
-        const roomType = roomTypes.find((r) => r.id === roomTypeId);
-        const availableRooms = yield prisma_1.default.room.findMany({
+        const roomsToAllocate = yield prisma_1.default.room.findMany({
             where: {
                 roomTypeId,
                 bookings: {
@@ -72,18 +67,41 @@ const bookMultipleRoomsWithPayment = (input) => __awaiter(void 0, void 0, void 0
                         booking: {
                             checkIn: { lt: checkOutDate },
                             checkOut: { gt: checkInDate },
+                            status: { not: "CANCELLED" },
                         },
                     },
                 },
             },
             take: quantity,
         });
-        if (availableRooms.length < quantity) {
-            throw new ApiError_1.default(404, `Not enough available rooms for roomTypeId ${roomTypeId}`);
+        if (roomsToAllocate.length < quantity) {
+            throw new ApiError_1.default(404, `Not enough available rooms for room type ID ${roomTypeId}`);
         }
+        const roomType = yield prisma_1.default.roomType.findUnique({
+            where: { id: roomTypeId },
+        });
         const days = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
-        totalAmount += days * roomType.price * quantity;
+        totalAmount += days * ((roomType === null || roomType === void 0 ? void 0 : roomType.price) || 0) * quantity;
+        roomsToAllocate.forEach((room) => allocatedRooms.push({ roomId: room.id, roomTypeId }));
     }
+    // Create Booking with PENDING_PAYMENT status
+    const booking = yield prisma_1.default.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+        return tx.booking.create({
+            data: {
+                userId,
+                checkIn: checkInDate,
+                checkOut: checkOutDate,
+                adults,
+                children,
+                totalAmount,
+                status: "PENDING_PAYMENT",
+                rooms: {
+                    create: allocatedRooms.map((r) => ({ roomId: r.roomId })),
+                },
+            },
+        });
+    }));
+    // Initiate Payment with bookingId in metadata
     const paymentResponse = yield createCharge({
         amount: totalAmount,
         currency: "SAR",
@@ -91,16 +109,16 @@ const bookMultipleRoomsWithPayment = (input) => __awaiter(void 0, void 0, void 0
         email: user.email || "test@example.com",
         phone: user.contactNumber || "500000000",
         countryCode: "966",
-        description: `Booking for user ${userId}`,
+        description: `Booking for user ${userId} - Booking ID: ${booking.id}`,
         metadata: {
+            bookingId: String(booking.id),
             userId: String(userId),
-            checkIn: checkInDate.toISOString(),
-            checkOut: checkOutDate.toISOString(),
-            adults,
-            children,
-            roomRequests: JSON.stringify(roomRequests),
-            date: new Date().toISOString(),
         },
+    });
+    // Update booking with payment reference (Charge ID)
+    yield prisma_1.default.booking.update({
+        where: { id: booking.id },
+        data: { paymentId: paymentResponse.id },
     });
     return { url: paymentResponse.transaction.url };
 });
@@ -121,6 +139,7 @@ const bookMultipleRooms = (input) => __awaiter(void 0, void 0, void 0, function*
                         booking: {
                             checkIn: { lt: checkOutDate },
                             checkOut: { gt: checkInDate },
+                            status: { not: "CANCELLED" },
                         },
                     },
                 },
@@ -166,6 +185,7 @@ const getAvailableRoomsService = (checkIn, checkOut) => __awaiter(void 0, void 0
     if (checkOut <= checkIn) {
         throw new Error("checkOut must be greater than checkIn");
     }
+    // Adding check to prevent queries for past dates if necessary, although for simple view, a past query is mostly harmless for reading. 
     checkIn.setHours(0, 0, 0, 0);
     checkOut.setHours(0, 0, 0, 0);
     const roomTypes = yield prisma_1.default.roomType.findMany({
@@ -177,6 +197,7 @@ const getAvailableRoomsService = (checkIn, checkOut) => __awaiter(void 0, void 0
                             booking: {
                                 checkIn: { lt: checkOut },
                                 checkOut: { gt: checkIn },
+                                status: { not: "CANCELLED" },
                             },
                         },
                     },
@@ -218,6 +239,7 @@ const getSingleRoomTypeService = (roomTypeId) => __awaiter(void 0, void 0, void 
     };
 });
 const getRoomsByDateService = (checkIn, checkOut) => __awaiter(void 0, void 0, void 0, function* () {
+    // console.log("helppppppppppp")
     if (!checkIn || !checkOut)
         throw new Error("checkIn and checkOut are required");
     checkIn.setHours(0, 0, 0, 0);
@@ -235,7 +257,9 @@ const getRoomsByDateService = (checkIn, checkOut) => __awaiter(void 0, void 0, v
         const isBooked = room.bookings.some((br) => {
             const bookingCheckIn = new Date(br.booking.checkIn);
             const bookingCheckOut = new Date(br.booking.checkOut);
-            return checkIn < bookingCheckOut && checkOut > bookingCheckIn;
+            return (checkIn < bookingCheckOut &&
+                checkOut > bookingCheckIn &&
+                br.booking.status !== "CANCELLED");
         });
         if (isBooked) {
             bookedRooms.push({ roomId: room.id, roomNumber: room.roomNumber });
@@ -290,13 +314,22 @@ const getSingleBookingWithUserService = (bookingId) => __awaiter(void 0, void 0,
         where: { id: bookingId },
         include: {
             user: true,
+            rooms: {
+                include: {
+                    room: {
+                        include: {
+                            roomType: true,
+                        },
+                    },
+                },
+            },
         },
     });
     if (!booking) {
         throw new ApiError_1.default(404, "Booking not found");
     }
     return {
-        bookingId: booking.id,
+        id: booking.id,
         checkIn: booking.checkIn,
         checkOut: booking.checkOut,
         adults: booking.adults,
@@ -310,6 +343,7 @@ const getSingleBookingWithUserService = (bookingId) => __awaiter(void 0, void 0,
             contactNumber: booking.user.contactNumber,
             profilePhoto: booking.user.profilePhoto,
         },
+        rooms: booking.rooms,
     };
 });
 const getAllBookingsWithUserService = (options) => __awaiter(void 0, void 0, void 0, function* () {
@@ -318,20 +352,29 @@ const getAllBookingsWithUserService = (options) => __awaiter(void 0, void 0, voi
     const skip = (page - 1) * limit;
     const whereConditions = {};
     if (options.searchTerm) {
-        whereConditions.user = {
-            email: { contains: options.searchTerm, mode: "insensitive" },
-        };
+        whereConditions.userId = Number(options.searchTerm);
     }
     const total = yield prisma_1.default.booking.count({ where: whereConditions });
-    const bookings = yield prisma_1.default.booking.findMany({
+    const bookings = (yield prisma_1.default.booking.findMany({
         where: whereConditions,
-        include: { user: true },
+        include: {
+            user: true,
+            rooms: {
+                include: {
+                    room: {
+                        include: {
+                            roomType: true,
+                        },
+                    },
+                },
+            },
+        },
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
-    });
+    }));
     const data = bookings.map((booking) => ({
-        bookingId: booking.id,
+        id: booking.id,
         checkIn: booking.checkIn,
         checkOut: booking.checkOut,
         adults: booking.adults,
@@ -345,6 +388,7 @@ const getAllBookingsWithUserService = (options) => __awaiter(void 0, void 0, voi
             contactNumber: booking.user.contactNumber,
             profilePhoto: booking.user.profilePhoto,
         },
+        rooms: booking.rooms,
     }));
     return {
         meta: { page, limit, total },
@@ -360,7 +404,7 @@ exports.BookingServices = {
     cancelBookingByIdService,
     getSingleBookingWithUserService,
     getAllBookingsWithUserService,
-    bookMultipleRoomsWithPayment: exports.bookMultipleRoomsWithPayment
+    bookMultipleRoomsWithPayment: exports.bookMultipleRoomsWithPayment,
 };
 // // {
 //   "userId": 10,

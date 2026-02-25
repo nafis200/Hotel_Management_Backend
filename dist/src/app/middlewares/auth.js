@@ -18,8 +18,11 @@ const jwtHelper_1 = require("../helper/jwtHelper");
 const config_1 = __importDefault(require("../config"));
 const auth = (...roles) => {
     return (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+        var _a;
         try {
-            const token = req.headers.authorization;
+            const headerToken = req.headers.authorization;
+            const cookieToken = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.accessToken;
+            const token = headerToken || cookieToken;
             if (!token) {
                 throw new ApiError_1.default(http_status_1.default.UNAUTHORIZED, "You are not authorized!");
             }
@@ -31,6 +34,7 @@ const auth = (...roles) => {
             next();
         }
         catch (err) {
+            console.error("AUTH MIDDLEWARE ERROR:", err.message, err.stack);
             next(err);
         }
     });

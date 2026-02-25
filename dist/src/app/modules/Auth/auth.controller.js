@@ -21,6 +21,7 @@ const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
 const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
 const ApiError_1 = __importDefault(require("../../errors/ApiError"));
 const fileUploader_1 = require("../../helper/fileUploader");
+const config_1 = __importDefault(require("../../config"));
 const registerUser = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const userInfo = yield auth_service_1.AuthServices.registerUser(req.body);
     (0, sendResponse_1.default)(res, {
@@ -40,8 +41,7 @@ exports.verifyEmail = (0, catchAsync_1.default)((req, res, next) => __awaiter(vo
         accessToken: result.accessToken,
         refreshToken: result.refreshToken,
     });
-    res.redirect("https://www.google.com/search?q=vjudge&oq=&gs_lcrp=EgZjaHJvbWUqCQgEECMYJxjqAjIJCAAQIxgnGOoCMgkIARAjGCcY6gIyCQgCECMYJxjqAjIJCAMQIxgnGOoCMgkIBBAjGCcY6gIyCQgFECMYJxjqAjIJCAYQIxgnGOoCMgkIBxAuGCcY6gLSAQkzNDIyajBqMTWoAgiwAgHxBRYBsPTx72yT8QUWAbD08e9skw&sourceid=chrome&ie=UTF-8");
-    // it must be reddireect login
+    res.redirect(`${config_1.default.frontend_url}/login`);
 }));
 const credentialsLogin = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const loginInfo = yield auth_service_1.AuthServices.credentialsLogin(req.body);
@@ -72,11 +72,13 @@ const logout = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, v
         httpOnly: true,
         secure: false,
         sameSite: "lax",
+        path: "/",
     });
     res.clearCookie("refreshToken", {
         httpOnly: true,
         secure: false,
         sameSite: "lax",
+        path: "/",
     });
     (0, sendResponse_1.default)(res, {
         success: true,
@@ -107,7 +109,7 @@ const googleCallbackController = (0, catchAsync_1.default)((req, res, next) => _
     }
     const tokenInfo = (0, userTokens_1.createUserTokens)(user);
     (0, setCookie_1.setAuthCookie)(res, tokenInfo);
-    res.redirect("https://www.google.com/search?q=programming+hero+level+2&rlz=1C1BNSD_enBD1125BD1126&sourceid=chrome&ie=UTF-8");
+    res.redirect(`${config_1.default.frontend_url}/${redirectTo}`);
 }));
 const forgotPassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     yield auth_service_1.AuthServices.forgotPassword(req.body);
@@ -157,10 +159,19 @@ const deleteUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, voi
         data: result
     });
 }));
+const updateUserStatus = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const { status } = req.body;
+    const result = yield auth_service_1.AuthServices.updateUserStatus(Number(id), status);
+    (0, sendResponse_1.default)(res, {
+        status: http_status_codes_1.default.OK,
+        success: true,
+        message: "User status updated successfully",
+        data: result
+    });
+}));
 const uploadImages = (0, catchAsync_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const files = req.files;
-    console.log("Body Data:", req.body);
-    console.log("Uploaded Files:", files);
     const uploadedFiles = yield Promise.all(files.map((file) => __awaiter(void 0, void 0, void 0, function* () {
         const result = yield fileUploader_1.fileUploader.uploadToCloudinary(file);
         return {
@@ -177,6 +188,22 @@ const uploadImages = (0, catchAsync_1.default)((req, res, next) => __awaiter(voi
         data: uploadedFiles
     });
 }));
+const getMyProfile = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = req.user;
+    if (!user || !user.userId) {
+        throw new ApiError_1.default(http_status_codes_1.default.UNAUTHORIZED, "User ID not found in token");
+    }
+    const result = yield auth_service_1.AuthServices.getMyProfile(Number(user.userId));
+    if (!result) {
+        throw new ApiError_1.default(http_status_codes_1.default.NOT_FOUND, "User profile not found in database");
+    }
+    (0, sendResponse_1.default)(res, {
+        status: http_status_codes_1.default.OK,
+        success: true,
+        message: "User profile fetched successfully",
+        data: result,
+    });
+}));
 exports.AuthControllers = {
     registerUser,
     credentialsLogin,
@@ -190,5 +217,7 @@ exports.AuthControllers = {
     deleteUser,
     getSingleUser,
     getAllUsers,
-    uploadImages
+    uploadImages,
+    getMyProfile,
+    updateUserStatus
 };

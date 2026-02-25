@@ -70,7 +70,7 @@ export const bookMultipleRoomsWithPayment = async (input: {
   const userName = user.name || "Test User";
 
   const Ids = roomRequests.map((r) => r.Id);
-  const s = await prisma..findMany({
+  const s = await prisma.roomType.findMany({
     where: { id: { in: Ids } },
   });
 
@@ -80,11 +80,11 @@ export const bookMultipleRoomsWithPayment = async (input: {
 
   for (const request of roomRequests) {
     const { Id, quantity } = request;
-    const  = s.find((r) => r.id === Id)!;
+    const roomType = s.find((r) => r.id === Id)!;
 
     const availableRooms = await prisma.room.findMany({
       where: {
-        Id,
+        roomTypeId: Id,
         bookings: {
           none: {
             booking: {
@@ -107,7 +107,7 @@ export const bookMultipleRoomsWithPayment = async (input: {
     const days = Math.ceil(
       (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24),
     );
-    totalAmount += days * .price * quantity;
+    totalAmount += days * roomType.price * quantity;
   }
 
 

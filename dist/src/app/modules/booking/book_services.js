@@ -58,18 +58,18 @@ const bookMultipleRoomsWithPayment = (input) => __awaiter(void 0, void 0, void 0
     if (!user)
         throw new ApiError_1.default(404, "User not found");
     const userName = user.name || "Test User";
-    const roomTypeIds = roomRequests.map((r) => r.roomTypeId);
-    const roomTypes = yield prisma_1.default.roomType.findMany({
-        where: { id: { in: roomTypeIds } },
+    const Ids = roomRequests.map((r) => r.Id);
+    const s = yield prisma_1.default.roomType.findMany({
+        where: { id: { in: Ids } },
     });
-    if (roomTypes.length !== roomRequests.length)
+    if (s.length !== roomRequests.length)
         throw new ApiError_1.default(404, "Some room types not found in the database");
     for (const request of roomRequests) {
-        const { roomTypeId, quantity } = request;
-        const roomType = roomTypes.find((r) => r.id === roomTypeId);
+        const { Id, quantity } = request;
+        const roomType = s.find((r) => r.id === Id);
         const availableRooms = yield prisma_1.default.room.findMany({
             where: {
-                roomTypeId,
+                roomTypeId: Id,
                 bookings: {
                     none: {
                         booking: {
@@ -82,7 +82,7 @@ const bookMultipleRoomsWithPayment = (input) => __awaiter(void 0, void 0, void 0
             take: quantity,
         });
         if (availableRooms.length < quantity) {
-            throw new ApiError_1.default(404, `Not enough available rooms for roomTypeId ${roomTypeId}`);
+            throw new ApiError_1.default(404, `Not enough available rooms for Id ${Id}`);
         }
         const days = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
         totalAmount += days * roomType.price * quantity;

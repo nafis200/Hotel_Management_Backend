@@ -17,6 +17,7 @@ const http_status_codes_1 = __importDefault(require("http-status-codes"));
 const jwt_1 = require("./jwt");
 const ApiError_1 = __importDefault(require("../errors/ApiError"));
 const config_1 = __importDefault(require("../config"));
+const prisma_1 = __importDefault(require("../../shared/prisma"));
 /**
  * 🔥 Fake in-memory users (NO DB)
  */
@@ -57,23 +58,18 @@ const createUserTokens = (user) => {
     };
 };
 exports.createUserTokens = createUserTokens;
-/**
- * =========================
- * REFRESH TOKEN → NEW ACCESS TOKEN
- * =========================
- */
 const createNewAccessTokenWithRefreshToken = (refreshToken) => __awaiter(void 0, void 0, void 0, function* () {
-    const verifiedRefreshToken = (0, jwt_1.verifyToken)(refreshToken, "abcdef");
-    // 🔍 find user from array
-    const isUserExist = users.find((u) => u.email === verifiedRefreshToken.email);
+    const verifiedRefreshToken = (0, jwt_1.verifyToken)(refreshToken, config_1.default.jwt.refresh_token_secret);
+    const isUserExist = yield prisma_1.default.user.findUnique({
+        where: { email: verifiedRefreshToken.email },
+    });
     if (!isUserExist) {
         throw new ApiError_1.default(http_status_codes_1.default.BAD_REQUEST, "User does not exist");
     }
-    if (isUserExist.isActive === "BLOCKED" ||
-        isUserExist.isActive === "INACTIVE") {
-        throw new ApiError_1.default(http_status_codes_1.default.BAD_REQUEST, `User is ${isUserExist.isActive}`);
+    if (isUserExist.status === "BLOCKED") {
+        throw new ApiError_1.default(http_status_codes_1.default.BAD_REQUEST, `User is ${isUserExist.status}`);
     }
-    if (isUserExist.isDeleted) {
+    if (isUserExist.status === "DELETED") {
         throw new ApiError_1.default(http_status_codes_1.default.BAD_REQUEST, "User is deleted");
     }
     const jwtPayload = {
@@ -81,7 +77,7 @@ const createNewAccessTokenWithRefreshToken = (refreshToken) => __awaiter(void 0,
         email: isUserExist.email,
         role: isUserExist.role,
     };
-    const accessToken = (0, jwt_1.generateToken)(jwtPayload, "abc", "5");
+    const accessToken = (0, jwt_1.generateToken)(jwtPayload, config_1.default.jwt.jwt_secret, config_1.default.jwt.expires_in);
     return accessToken;
 });
 exports.createNewAccessTokenWithRefreshToken = createNewAccessTokenWithRefreshToken;

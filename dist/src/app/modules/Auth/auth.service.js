@@ -137,7 +137,6 @@ const verifyEmailService = (token) => __awaiter(void 0, void 0, void 0, function
     if (!payload) {
         throw new ApiError_1.default(http_status_codes_1.default.FORBIDDEN, "Token is invalid!");
     }
-    console.log(payload, "verified payload");
     const user = yield prisma_1.default.user.findUnique({
         where: { email: payload.email },
     });
@@ -285,12 +284,47 @@ const deleteUser = (id) => __awaiter(void 0, void 0, void 0, function* () {
         where: { id },
     });
     if (!user) {
-        throw new Error("User not found");
+        throw new ApiError_1.default(http_status_codes_1.default.NOT_FOUND, "User not found");
     }
-    const deletedUser = yield prisma_1.default.user.delete({
+    const deletedUser = yield prisma_1.default.user.update({
         where: { id },
+        data: { status: client_1.UserStatus.DELETED },
     });
     return deletedUser;
+});
+const updateUserStatus = (id, status) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield prisma_1.default.user.findUnique({
+        where: { id },
+    });
+    if (!user) {
+        throw new ApiError_1.default(http_status_codes_1.default.NOT_FOUND, "User not found");
+    }
+    const updatedUser = yield prisma_1.default.user.update({
+        where: { id },
+        data: { status },
+    });
+    return updatedUser;
+});
+const getMyProfile = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!id) {
+        throw new ApiError_1.default(http_status_codes_1.default.BAD_REQUEST, "User ID is required for profile fetch");
+    }
+    const result = yield prisma_1.default.user.findUnique({
+        where: {
+            id,
+        },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            verified: true,
+            role: true,
+            status: true,
+            profilePhoto: true,
+            createdAt: true,
+        },
+    });
+    return result;
 });
 exports.AuthServices = {
     credentialsLogin,
@@ -303,4 +337,6 @@ exports.AuthServices = {
     getAllUsers,
     getSingleUser,
     deleteUser,
+    getMyProfile,
+    updateUserStatus,
 };

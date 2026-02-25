@@ -16,7 +16,6 @@ exports.AuthRoutes = void 0;
 const express_1 = require("express");
 const passport_1 = __importDefault(require("passport"));
 const auth_controller_1 = require("./auth.controller");
-const fileUploader_1 = require("../../helper/fileUploader");
 const auth_1 = __importDefault(require("../../middlewares/auth"));
 const router = (0, express_1.Router)();
 router.post("/register", auth_controller_1.AuthControllers.registerUser);
@@ -36,7 +35,8 @@ router.get("/google", (req, res, next) => __awaiter(void 0, void 0, void 0, func
 }));
 router.get("/google/callback", passport_1.default.authenticate("google", { failureRedirect: "/login" }), auth_controller_1.AuthControllers.googleCallbackController);
 router.get("/", auth_controller_1.AuthControllers.getAllUsers);
+router.get("/me", (0, auth_1.default)(), auth_controller_1.AuthControllers.getMyProfile);
 router.get("/:id", auth_controller_1.AuthControllers.getSingleUser);
 router.delete("/:id", auth_controller_1.AuthControllers.deleteUser);
-router.post("/image", fileUploader_1.fileUploader.upload.array("files"), auth_controller_1.AuthControllers.uploadImages);
+router.patch("/:id/status", auth_controller_1.AuthControllers.updateUserStatus);
 exports.AuthRoutes = router;

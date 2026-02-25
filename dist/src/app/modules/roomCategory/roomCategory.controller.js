@@ -17,13 +17,20 @@ const http_status_1 = __importDefault(require("http-status"));
 const roomCategory_services_1 = require("./roomCategory.services");
 const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
+const fileUploader_1 = require("../../helper/fileUploader");
 const createRoomType = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const roomType = yield roomCategory_services_1.RoomTypeServices.createRoomType(req.body);
+    const files = req.files;
+    const bodyData = JSON.parse(req.body.body);
+    const images = yield Promise.all(files.map((file) => __awaiter(void 0, void 0, void 0, function* () {
+        const result = yield fileUploader_1.fileUploader.uploadToCloudinary(file);
+        return result === null || result === void 0 ? void 0 : result.secure_url;
+    })));
+    const roomType = yield roomCategory_services_1.RoomTypeServices.createRoomType(bodyData, images);
     (0, sendResponse_1.default)(res, {
         status: http_status_1.default.CREATED,
         success: true,
         message: "RoomType created successfully",
-        data: roomType,
+        data: roomType
     });
 }));
 const getAllRoomTypes = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -70,5 +77,5 @@ exports.RoomTypeControllers = {
     getAllRoomTypes,
     getRoomTypeById,
     updateRoomType,
-    deleteRoomType
+    deleteRoomType,
 };

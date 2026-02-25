@@ -15,8 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RoomTypeServices = void 0;
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
 const ApiError_1 = __importDefault(require("../../errors/ApiError"));
-const createRoomType = (data) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name, description, price, images, facilities } = data;
+const createRoomType = (data, images) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log(data);
+    const { name, description, price, facilities } = data;
     const roomType = yield prisma_1.default.roomType.create({
         data: { name, description, price, images, facilities },
     });
