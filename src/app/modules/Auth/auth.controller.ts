@@ -218,6 +218,21 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 
+const updateUserStatus = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const result = await AuthServices.updateUserStatus(Number(id), status);
+
+  sendResponse(res, {
+    status: httpStatus.OK,
+    success: true,
+    message: "User status updated successfully",
+    data: result
+  });
+});
+
+
 const uploadImages = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
 
@@ -280,5 +295,6 @@ export const AuthControllers = {
   getSingleUser,
   getAllUsers,
   uploadImages,
-  getMyProfile
+  getMyProfile,
+  updateUserStatus
 };

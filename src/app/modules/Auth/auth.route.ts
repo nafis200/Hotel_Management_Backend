@@ -45,5 +45,7 @@ router.get("/me", auth(), AuthControllers.getMyProfile);
 router.get("/:id", AuthControllers.getSingleUser);
 
 router.delete("/:id", AuthControllers.deleteUser);
+router.patch("/:id/status", AuthControllers.updateUserStatus);
+
 
 export const AuthRoutes = router;

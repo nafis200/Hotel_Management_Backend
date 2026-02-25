@@ -336,13 +336,30 @@ const deleteUser = async (id: number) => {
     where: { id },
   });
   if (!user) {
-    throw new Error("User not found");
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
-  const deletedUser = await prisma.user.delete({
+  const deletedUser = await prisma.user.update({
     where: { id },
+    data: { status: UserStatus.DELETED },
   });
 
   return deletedUser;
+};
+
+const updateUserStatus = async (id: number, status: UserStatus) => {
+  const user = await prisma.user.findUnique({
+    where: { id },
+  });
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id },
+    data: { status },
+  });
+
+  return updatedUser;
 };
 
 const getMyProfile = async (id: number) => {
@@ -381,4 +398,5 @@ export const AuthServices = {
   getSingleUser,
   deleteUser,
   getMyProfile,
+  updateUserStatus,
 };
