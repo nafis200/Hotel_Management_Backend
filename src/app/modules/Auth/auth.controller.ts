@@ -143,7 +143,10 @@ const googleCallbackController = catchAsync(
     const tokenInfo = createUserTokens(user);
 
     setAuthCookie(res, tokenInfo);
-    res.redirect(`${config.frontend_url}/${redirectTo}`);
+
+    // Redirect to the frontend callback page instead of directly to the dashboard
+    // This allows the frontend to set the client-side cookie for the middleware
+    res.redirect(`${config.frontend_url}/auth/google/callback?accessToken=${tokenInfo.accessToken}&redirectTo=${redirectTo}`);
   },
 );
 

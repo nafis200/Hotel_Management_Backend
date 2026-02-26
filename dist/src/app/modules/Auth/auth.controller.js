@@ -110,7 +110,9 @@ const googleCallbackController = (0, catchAsync_1.default)((req, res, next) => _
     }
     const tokenInfo = (0, userTokens_1.createUserTokens)(user);
     (0, setCookie_1.setAuthCookie)(res, tokenInfo);
-    res.redirect(`${config_1.default.frontend_url}/${redirectTo}`);
+    // Redirect to the frontend callback page instead of directly to the dashboard
+    // This allows the frontend to set the client-side cookie for the middleware
+    res.redirect(`${config_1.default.frontend_url}/auth/google/callback?accessToken=${tokenInfo.accessToken}&redirectTo=${redirectTo}`);
 }));
 const forgotPassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     yield auth_service_1.AuthServices.forgotPassword(req.body);
