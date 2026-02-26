@@ -493,6 +493,8 @@ interface BookingPaginationOptions {
   name?: string;
   email?: string;
   date?: string;
+  checkIn?: string;
+  checkOut?: string;
 }
 
 const getAllBookingsWithUserService = async (
@@ -538,6 +540,24 @@ const getAllBookingsWithUserService = async (
       whereConditions.AND.push({
         checkIn: { lte: searchDate },
         checkOut: { gte: searchDate }
+      });
+    }
+  }
+
+  if (options.checkIn) {
+    const searchCheckIn = new Date(options.checkIn);
+    if (!isNaN(searchCheckIn.getTime())) {
+      whereConditions.AND.push({
+        checkIn: { gte: searchCheckIn }
+      });
+    }
+  }
+
+  if (options.checkOut) {
+    const searchCheckOut = new Date(options.checkOut);
+    if (!isNaN(searchCheckOut.getTime())) {
+      whereConditions.AND.push({
+        checkOut: { lte: searchCheckOut }
       });
     }
   }

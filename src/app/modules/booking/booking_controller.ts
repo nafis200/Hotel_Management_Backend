@@ -9,7 +9,7 @@ import { bookMultipleRoomsWithPayment } from "./book_services";
 
 const getAllBookingsController = catchAsync(async (req: Request, res: Response) => {
 
-  const { page, limit, searchTerm, name, email, date } = req.query;
+  const { page, limit, searchTerm, name, email, date, checkIn, checkOut } = req.query;
   const options = {
     page: page ? Number(page) : undefined,
     limit: limit ? Number(limit) : undefined,
@@ -17,6 +17,8 @@ const getAllBookingsController = catchAsync(async (req: Request, res: Response) 
     name: name ? String(name) : undefined,
     email: email ? String(email) : undefined,
     date: date ? String(date) : undefined,
+    checkIn: checkIn ? String(checkIn) : undefined,
+    checkOut: checkOut ? String(checkOut) : undefined,
   };
 
 

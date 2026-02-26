@@ -382,6 +382,22 @@ const getAllBookingsWithUserService = (options) => __awaiter(void 0, void 0, voi
             });
         }
     }
+    if (options.checkIn) {
+        const searchCheckIn = new Date(options.checkIn);
+        if (!isNaN(searchCheckIn.getTime())) {
+            whereConditions.AND.push({
+                checkIn: { gte: searchCheckIn }
+            });
+        }
+    }
+    if (options.checkOut) {
+        const searchCheckOut = new Date(options.checkOut);
+        if (!isNaN(searchCheckOut.getTime())) {
+            whereConditions.AND.push({
+                checkOut: { lte: searchCheckOut }
+            });
+        }
+    }
     // Remove empty AND if no conditions
     if (whereConditions.AND.length === 0) {
         delete whereConditions.AND;
