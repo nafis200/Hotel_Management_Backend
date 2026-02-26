@@ -8,12 +8,15 @@ import { bookMultipleRoomsWithPayment } from "./book_services";
 
 
 const getAllBookingsController = catchAsync(async (req: Request, res: Response) => {
-  
-  const { page, limit, searchTerm } = req.query;
+
+  const { page, limit, searchTerm, name, email, date } = req.query;
   const options = {
     page: page ? Number(page) : undefined,
     limit: limit ? Number(limit) : undefined,
     searchTerm: searchTerm ? String(searchTerm) : undefined,
+    name: name ? String(name) : undefined,
+    email: email ? String(email) : undefined,
+    date: date ? String(date) : undefined,
   };
 
 
@@ -43,7 +46,7 @@ const bookMultipleRoomsController = catchAsync(async (req: Request, res: Respons
 const OnlinebookMultipleRoomsController = catchAsync(async (req: Request, res: Response) => {
   const data = req.body;
 
- 
+
 
   const booking = await BookingServices.bookMultipleRoomsWithPayment(data);
   sendResponse(res, {
@@ -59,7 +62,7 @@ const OnlinebookMultipleRoomsController = catchAsync(async (req: Request, res: R
 const getAvailableRoomsController = catchAsync(
   async (req: Request, res: Response) => {
 
- 
+
 
     const { checkIn, checkOut } = req.query;
 
@@ -167,14 +170,14 @@ const getSingleBookingController = catchAsync(async (req: Request, res: Response
 
 export const BookingController = {
 
-    getSingleBookingController,
-    cancelBookingController,
-    deleteRoomTypeController,
-    getRoomsByDateController,
-    getSingleRoomTypeController,
-    getAvailableRoomsController,
-    bookMultipleRoomsController,
-    getAllBookingsController,
-    OnlinebookMultipleRoomsController 
-       
+  getSingleBookingController,
+  cancelBookingController,
+  deleteRoomTypeController,
+  getRoomsByDateController,
+  getSingleRoomTypeController,
+  getAvailableRoomsController,
+  bookMultipleRoomsController,
+  getAllBookingsController,
+  OnlinebookMultipleRoomsController
+
 }

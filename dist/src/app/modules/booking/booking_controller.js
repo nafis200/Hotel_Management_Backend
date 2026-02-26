@@ -18,11 +18,14 @@ const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
 const booking_services_1 = require("./booking_services");
 const getAllBookingsController = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { page, limit, searchTerm } = req.query;
+    const { page, limit, searchTerm, name, email, date } = req.query;
     const options = {
         page: page ? Number(page) : undefined,
         limit: limit ? Number(limit) : undefined,
         searchTerm: searchTerm ? String(searchTerm) : undefined,
+        name: name ? String(name) : undefined,
+        email: email ? String(email) : undefined,
+        date: date ? String(date) : undefined,
     };
     const result = yield booking_services_1.BookingServices.getAllBookingsWithUserService(options);
     (0, sendResponse_1.default)(res, {

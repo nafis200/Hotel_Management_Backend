@@ -490,6 +490,9 @@ interface BookingPaginationOptions {
   page?: number;
   limit?: number;
   searchTerm?: string;
+  name?: string;
+  email?: string;
+  date?: string;
 }
 
 const getAllBookingsWithUserService = async (
@@ -502,9 +505,46 @@ const getAllBookingsWithUserService = async (
   const limit = options.limit && options.limit > 0 ? options.limit : 10;
   const skip = (page - 1) * limit;
 
-  const whereConditions: any = {};
+  const whereConditions: any = { AND: [] };
+
   if (options.searchTerm) {
-    whereConditions.userId = Number(options.searchTerm);
+    whereConditions.AND.push({
+      OR: [
+        { id: isNaN(Number(options.searchTerm)) ? undefined : Number(options.searchTerm) },
+        { userId: isNaN(Number(options.searchTerm)) ? undefined : Number(options.searchTerm) },
+      ].filter(Boolean)
+    });
+  }
+
+  if (options.name) {
+    whereConditions.AND.push({
+      user: {
+        name: { contains: options.name, mode: 'insensitive' }
+      }
+    });
+  }
+
+  if (options.email) {
+    whereConditions.AND.push({
+      user: {
+        email: { contains: options.email, mode: 'insensitive' }
+      }
+    });
+  }
+
+  if (options.date) {
+    const searchDate = new Date(options.date);
+    if (!isNaN(searchDate.getTime())) {
+      whereConditions.AND.push({
+        checkIn: { lte: searchDate },
+        checkOut: { gte: searchDate }
+      });
+    }
+  }
+
+  // Remove empty AND if no conditions
+  if (whereConditions.AND.length === 0) {
+    delete whereConditions.AND;
   }
 
   const total = await prisma.booking.count({ where: whereConditions });
