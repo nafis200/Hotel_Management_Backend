@@ -267,8 +267,44 @@ const resetPassword = (token, payload) => __awaiter(void 0, void 0, void 0, func
         },
     });
 });
-const getAllUsers = () => __awaiter(void 0, void 0, void 0, function* () {
-    return yield prisma_1.default.user.findMany();
+const getAllUsers = (options) => __awaiter(void 0, void 0, void 0, function* () {
+    const page = options.page && options.page > 0 ? options.page : 1;
+    const limit = options.limit && options.limit > 0 ? options.limit : 10;
+    const skip = (page - 1) * limit;
+    const whereConditions = {
+        AND: [
+            { status: { not: client_1.UserStatus.DELETED } }
+        ]
+    };
+    if (options.searchTerm) {
+        whereConditions.AND.push({
+            OR: [
+                { name: { contains: options.searchTerm, mode: 'insensitive' } },
+                { email: { contains: options.searchTerm, mode: 'insensitive' } },
+            ],
+        });
+    }
+    const total = yield prisma_1.default.user.count({ where: whereConditions });
+    const data = yield prisma_1.default.user.findMany({
+        where: whereConditions,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            status: true,
+            verified: true,
+            profilePhoto: true,
+            createdAt: true,
+        },
+    });
+    return {
+        meta: { page, limit, total },
+        data,
+    };
 });
 const getSingleUser = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield prisma_1.default.user.findUnique({

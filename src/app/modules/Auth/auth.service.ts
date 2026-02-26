@@ -317,8 +317,52 @@ const resetPassword = async (
   });
 };
 
-const getAllUsers = async () => {
-  return await prisma.user.findMany();
+const getAllUsers = async (options: {
+  page?: number;
+  limit?: number;
+  searchTerm?: string;
+}) => {
+  const page = options.page && options.page > 0 ? options.page : 1;
+  const limit = options.limit && options.limit > 0 ? options.limit : 10;
+  const skip = (page - 1) * limit;
+
+  const whereConditions: any = {
+    AND: [
+      { status: { not: UserStatus.DELETED } }
+    ]
+  };
+
+  if (options.searchTerm) {
+    whereConditions.AND.push({
+      OR: [
+        { name: { contains: options.searchTerm, mode: 'insensitive' } },
+        { email: { contains: options.searchTerm, mode: 'insensitive' } },
+      ],
+    });
+  }
+
+  const total = await prisma.user.count({ where: whereConditions });
+  const data = await prisma.user.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      status: true,
+      verified: true,
+      profilePhoto: true,
+      createdAt: true,
+    },
+  });
+
+  return {
+    meta: { page, limit, total },
+    data,
+  };
 };
 
 const getSingleUser = async (id: number) => {

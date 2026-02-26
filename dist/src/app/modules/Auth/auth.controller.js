@@ -134,7 +134,13 @@ const resetPassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, 
     });
 }));
 const getAllUsers = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield auth_service_1.AuthServices.getAllUsers();
+    const { page, limit, searchTerm } = req.query;
+    const options = {
+        page: page ? Number(page) : undefined,
+        limit: limit ? Number(limit) : undefined,
+        searchTerm: searchTerm ? String(searchTerm) : undefined,
+    };
+    const result = yield auth_service_1.AuthServices.getAllUsers(options);
     (0, sendResponse_1.default)(res, {
         status: http_status_codes_1.default.OK,
         success: true,

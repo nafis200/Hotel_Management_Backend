@@ -179,7 +179,14 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
 
-  const result = await AuthServices.getAllUsers();
+  const { page, limit, searchTerm } = req.query;
+  const options = {
+    page: page ? Number(page) : undefined,
+    limit: limit ? Number(limit) : undefined,
+    searchTerm: searchTerm ? String(searchTerm) : undefined,
+  };
+
+  const result = await AuthServices.getAllUsers(options);
 
   sendResponse(res, {
     status: httpStatus.OK,
