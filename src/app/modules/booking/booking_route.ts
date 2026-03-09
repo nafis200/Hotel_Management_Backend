@@ -1,30 +1,31 @@
 import express from "express";
 import { BookingController } from "./booking_controller";
+import auth from "../../middlewares/auth";
+import { UserRole } from "@prisma/client";
 
 const router = express.Router();
 
 
 router.post(
   "/book",
+  auth(UserRole.USER, UserRole.ADMIN),
   BookingController.bookMultipleRoomsController
 );
 
 router.post("/online-book",
+  auth(UserRole.USER, UserRole.ADMIN),
   BookingController.OnlinebookMultipleRoomsController
 );
 
 router.get(
   "/",
+  auth(UserRole.ADMIN),
   BookingController.getAllBookingsController
 );
 
-
-
-
-
-
 router.patch(
   "/cancel/:id",
+  auth(UserRole.USER, UserRole.ADMIN),
   BookingController.cancelBookingController
 );
 
@@ -47,12 +48,14 @@ router.get(
 
 router.get(
   "/:id",
+  auth(UserRole.USER, UserRole.ADMIN),
   BookingController.getSingleBookingController
 );
 
 
 router.delete(
   "/room-type/:id",
+  auth(UserRole.ADMIN),
   BookingController.deleteRoomTypeController
 );
 
